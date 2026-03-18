@@ -24,7 +24,7 @@ class RawItem(Base):
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     url: Mapped[str] = mapped_column(String(2048), nullable=False)
     content_preview: Mapped[str] = mapped_column(Text, nullable=False)
-    metadata: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    item_metadata: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
     engagement_metrics: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     collected_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

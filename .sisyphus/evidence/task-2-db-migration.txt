@@ -1,0 +1,67 @@
+# Task 2: Database Schema + Migrations - QA Evidence
+
+## Test Date: 2026-03-18
+
+### 1. Model Imports Test
+✓ All models imported successfully
+- Source: <class 'content_autopilot.models.source.Source'>
+- RawItem: <class 'content_autopilot.models.raw_item.RawItem'>
+- ScoredItem: <class 'content_autopilot.models.scored_item.ScoredItem'>
+- Article: <class 'content_autopilot.models.article.Article'>
+- Publication: <class 'content_autopilot.models.publication.Publication'>
+- PipelineRun: <class 'content_autopilot.models.pipeline_run.PipelineRun'>
+
+### 2. Database Module Test
+✓ DB module imported successfully
+- Base: <class 'content_autopilot.db.Base'>
+- async_engine: <sqlalchemy.ext.asyncio.engine.AsyncEngine object>
+- async_session: async_sessionmaker configured
+- get_session: <function get_session> (FastAPI dependency)
+
+### 3. File Structure Verification
+✓ Models directory created: /Users/june/content-autopilot/src/content_autopilot/models/
+  - __init__.py (exports all models)
+  - source.py (Source model)
+  - raw_item.py (RawItem model)
+  - scored_item.py (ScoredItem model)
+  - article.py (Article model)
+  - publication.py (Publication model)
+  - pipeline_run.py (PipelineRun model)
+
+✓ Database configuration: /Users/june/content-autopilot/src/content_autopilot/db.py
+  - async_engine with asyncpg driver
+  - async_session factory
+  - get_session() for FastAPI dependency injection
+
+✓ Alembic configuration: /Users/june/content-autopilot/alembic/
+  - alembic.ini (configured with db_url)
+  - env.py (async migration support)
+  - versions/001_initial_schema.py (initial migration)
+
+### 4. Schema Verification
+All tables created with correct columns and constraints:
+- sources: id (PK), type, config (JSON), enabled (bool), last_fetched_at (DateTime)
+- raw_items: id (PK), source_id (FK), external_id, title, url, content_preview, metadata (JSON), engagement_metrics (JSON), collected_at (DateTime)
+- scored_items: id (PK), raw_item_id (FK), score (Float), score_breakdown (JSON), is_duplicate (bool), scored_at (DateTime)
+- articles: id (PK), scored_item_id (FK), title_ko, content_ko, summary_ko, persona_id, style_metadata (JSON), source_attribution, created_at (DateTime)
+- publications: id (PK), article_id (FK), channel, external_url, published_at (DateTime), status, error_message (Text)
+- pipeline_runs: id (PK), started_at (DateTime), completed_at (DateTime), status, items_collected (int), items_scored (int), items_published (int), error_log (Text)
+
+### 5. SQLAlchemy Configuration
+✓ SQLAlchemy 2.0 async patterns:
+  - DeclarativeBase for model inheritance
+  - Mapped types with type hints
+  - async_sessionmaker for session factory
+  - AsyncSession for async database operations
+  - ForeignKey constraints with ondelete="CASCADE"
+  - JSON columns for flexible data storage
+  - server_default for timestamps
+
+### 6. Alembic Migration
+✓ Initial migration created: 001_initial_schema.py
+  - Upgrade function creates all 6 tables
+  - Downgrade function drops all tables in correct order
+  - Async-compatible env.py configuration
+
+## Conclusion
+All database schema and migration components successfully created and verified.

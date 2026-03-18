@@ -2,9 +2,8 @@
 
 from typing import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import AsyncSession as AsyncSessionType
-from sqlalchemy.orm import DeclarativeBase, asyncsessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
 
 from content_autopilot.config import settings
 
@@ -24,14 +23,14 @@ async_engine = create_async_engine(
 )
 
 # Create async session factory
-async_session = asyncsessionmaker(
+async_session = async_sessionmaker(
     async_engine,
     class_=AsyncSession,
     expire_on_commit=False,
 )
 
 
-async def get_session() -> AsyncGenerator[AsyncSessionType, None]:
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Dependency injection for FastAPI to get async session."""
     async with async_session() as session:
         yield session
