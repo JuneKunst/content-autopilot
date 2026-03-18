@@ -1,0 +1,39 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.0, pytest-9.0.2, pluggy-1.6.0 -- /Users/june/.pyenv/versions/3.13.0/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/june/content-autopilot
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 21 items
+
+tests/collectors/test_rss.py::TestEntryToRawItem::test_strips_html_from_summary PASSED [  4%]
+tests/collectors/test_rss.py::TestEntryToRawItem::test_returns_none_when_no_title PASSED [  9%]
+tests/collectors/test_rss.py::TestEntryToRawItem::test_returns_none_when_no_link PASSED [ 14%]
+tests/collectors/test_rss.py::TestEntryToRawItem::test_source_set_from_feed_config PASSED [ 19%]
+tests/collectors/test_rss.py::TestEntryToRawItem::test_source_lang_set_from_feed_config PASSED [ 23%]
+tests/collectors/test_rss.py::TestEntryToRawItem::test_content_preview_truncated_to_500 PASSED [ 28%]
+tests/collectors/test_rss.py::TestEntryToRawItem::test_uses_content_field_when_no_summary PASSED [ 33%]
+tests/collectors/test_rss.py::TestEntryToRawItem::test_external_id_uses_link_hash PASSED [ 38%]
+tests/collectors/test_rss.py::TestEntryToRawItem::test_engagement_defaults_to_zero PASSED [ 42%]
+tests/collectors/test_rss.py::TestParseDate::test_parses_rfc2822_published_field PASSED [ 47%]
+tests/collectors/test_rss.py::TestParseDate::test_returns_none_when_no_date_fields PASSED [ 52%]
+tests/collectors/test_rss.py::TestParseDate::test_falls_back_to_updated_field PASSED [ 57%]
+tests/collectors/test_rss.py::TestParseDate::test_returns_none_for_invalid_date PASSED [ 61%]
+tests/collectors/test_rss.py::TestAgeFilter::test_excludes_entries_older_than_max_age PASSED [ 66%]
+tests/collectors/test_rss.py::TestAgeFilter::test_includes_recent_entries PASSED [ 71%]
+tests/collectors/test_rss.py::TestAgeFilter::test_includes_entries_without_date PASSED [ 76%]
+tests/collectors/test_rss.py::TestCollect::test_collect_returns_items_from_mocked_feed PASSED [ 80%]
+tests/collectors/test_rss.py::TestCollect::test_collect_respects_limit PASSED [ 85%]
+tests/collectors/test_rss.py::TestCollect::test_collect_no_html_in_content_preview PASSED [ 90%]
+tests/collectors/test_rss.py::TestCollect::test_collect_handles_feed_error_gracefully PASSED [ 95%]
+tests/collectors/test_rss.py::TestCollect::test_collect_multiple_feeds PASSED [100%]
+
+=============================== warnings summary ===============================
+tests/collectors/test_rss.py: 20 warnings
+  /Users/june/.pyenv/versions/3.13.0/lib/python3.13/site-packages/pydantic/main.py:250: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 21 passed, 20 warnings in 0.16s ========================
+Import OK

@@ -1,0 +1,15 @@
+feeds:
+  - url: "https://news.hada.io/rss"
+    name: "geeknews"
+    lang: "ko"
+  - url: "https://techcrunch.com/feed/"
+    name: "techcrunch"
+    lang: "en"
+  - url: "https://feeds.arstechnica.com/arstechnica/index"
+    name: "arstechnica"
+    lang: "en"
+  - url: "https://hnrss.org/frontpage"
+    name: "hn_rss"
+    lang: "en"
+max_age_hours: 24
+fetch_interval: "0 */6 * * *"  # every 6 hours
