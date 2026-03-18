@@ -1,0 +1,8 @@
+# Newsletter Configuration for Ghost CMS
+# Controls automated newsletter sending behavior
+
+enabled: false
+frequency: daily
+prefix: ""  # Optional prefix like "[Daily Digest]"
+digest_day: monday  # For weekly digest
+auto_send: false  # Automatically send newsletter on publish
