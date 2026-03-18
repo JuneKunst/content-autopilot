@@ -123,15 +123,25 @@ ok "oh-my-opencode"
 
 # ── 9. 환경 번들 가져오기 ──
 BUNDLE_TAR="$HOME/opencode-env-bundle.tar.gz"
+SYNC_SCRIPT="$HOME/.cache/content-autopilot-sync-env.sh"
+
 if [ -f "$BUNDLE_TAR" ]; then
     echo ""
     info "환경 번들 발견! 설정을 가져옵니다..."
-    bash "$(dirname "$0")/sync-env.sh" import
+
+    mkdir -p "$(dirname "$SYNC_SCRIPT")"
+    curl -fsSL "https://raw.githubusercontent.com/JuneKunst/content-autopilot/main/scripts/sync-env.sh" \
+        -o "$SYNC_SCRIPT"
+    chmod +x "$SYNC_SCRIPT"
+    bash "$SYNC_SCRIPT" import
+    rm -f "$SYNC_SCRIPT"
 else
     echo ""
     warn "환경 번들이 없습니다 ($BUNDLE_TAR)"
-    echo "    기존 컴퓨터에서: bash scripts/sync-env.sh export"
-    echo "    이 컴퓨터로 전송 후 다시 실행하세요."
+    echo "    기존 컴퓨터에서 실행:"
+    echo "      cd content-autopilot"
+    echo "      bash scripts/sync-env.sh export"
+    echo "    번들 파일을 이 컴퓨터 홈(~/)에 복사 후 다시 실행하세요."
 fi
 
 # ── 10. GitHub CLI ──
