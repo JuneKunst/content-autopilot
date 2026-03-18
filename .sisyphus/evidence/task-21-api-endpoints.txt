@@ -1,0 +1,40 @@
+Task 21: Dashboard Backend API Endpoints
+========================================
+Date: 2026-03-18
+
+Verification:
+  python -c "from content_autopilot.dashboard.api import router; print('OK')"
+  → OK
+
+Route count:
+  python -c "from content_autopilot.dashboard.api import router; print(len(router.routes), 'routes')"
+  → 12 routes
+
+All 12 endpoints:
+  GET    /api/dashboard/overview
+  GET    /api/articles
+  GET    /api/articles/{article_id}
+  GET    /api/pipeline/runs
+  POST   /api/pipeline/run
+  GET    /api/sources
+  PUT    /api/sources/{source_id}
+  PATCH  /api/sources/{source_id}/toggle
+  POST   /api/sources
+  GET    /api/stats
+  GET    /api/schedule
+  DELETE /api/schedule/{schedule_id}
+
+Files created/modified:
+  - src/content_autopilot/dashboard/api.py (new)
+  - src/content_autopilot/dashboard/__init__.py (updated)
+  - src/content_autopilot/app.py (updated with CORS + router)
+  - src/content_autopilot/dashboard/static/ (new dir)
+  - src/content_autopilot/dashboard/templates/ (new dir)
+  - pyproject.toml (added python-multipart>=0.0.6)
+
+Auth: HTTP Basic Auth (admin / settings.dashboard_password)
+  - Uses secrets.compare_digest() for timing-safe comparison
+  - 401 + WWW-Authenticate: Basic on failure
+
+CORS: Enabled for all origins (browser access)
+Pipeline trigger: POST /api/pipeline/run runs Pipeline() in BackgroundTasks

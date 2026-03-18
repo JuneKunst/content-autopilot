@@ -30,6 +30,7 @@ dependencies = [
     "feedparser>=6.0.0",
     "markdown>=3.5.0",
     "PyJWT>=2.8.0",
+    "python-multipart>=0.0.6",
 ]
 
 [project.optional-dependencies]
