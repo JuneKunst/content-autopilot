@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}대시보드 — Content Autopilot{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-900 mb-6">오늘의 현황</h1>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+  <div class="bg-white rounded-lg shadow p-4"><p class="text-sm text-gray-500">오늘 발행</p><p class="article-count text-2xl font-bold">0</p></div>
+  <div class="bg-white rounded-lg shadow p-4"><p class="text-sm text-gray-500">총 발행</p><p class="text-2xl font-bold">0</p></div>
+  <div class="bg-white rounded-lg shadow p-4"><p class="text-sm text-gray-500">활성 소스</p><p class="text-2xl font-bold">5</p></div>
+  <div class="bg-white rounded-lg shadow p-4"><p class="text-sm text-gray-500">파이프라인</p><p class="pipeline-status text-2xl font-bold text-green-600">idle</p></div>
+</div>
+<div class="bg-white rounded-lg shadow">
+  <div class="px-6 py-4 border-b flex justify-between items-center">
+    <h2 class="font-semibold">최근 기사</h2>
+    <button hx-post="/api/pipeline/run" hx-target="#pipeline-result" hx-swap="innerHTML"
+            class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">파이프라인 실행</button>
+  </div>
+  <div id="pipeline-result" class="px-6 py-2 text-sm text-gray-500"></div>
+  <table class="min-w-full text-sm">
+    <thead class="bg-gray-50"><tr>
+      <th class="px-6 py-3 text-left text-xs text-gray-500 uppercase">제목</th>
+      <th class="px-6 py-3 text-left text-xs text-gray-500 uppercase">소스</th>
+      <th class="px-6 py-3 text-left text-xs text-gray-500 uppercase">발행일</th>
+    </tr></thead>
+    <tbody class="articles-table divide-y divide-gray-100">
+      <tr><td colspan="3" class="px-6 py-4 text-center text-gray-400">아직 발행된 기사가 없습니다</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}

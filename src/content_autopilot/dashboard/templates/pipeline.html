@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}파이프라인 — Content Autopilot{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-900 mb-6">파이프라인 관리</h1>
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+  <h2 class="font-semibold mb-4">수동 실행</h2>
+  <div class="flex space-x-3">
+    <button hx-post="/api/pipeline/run" hx-target="#run-result" hx-swap="innerHTML" hx-indicator="#spinner"
+            class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">파이프라인 실행</button>
+    <button hx-post="/api/pipeline/run?dry_run=true" hx-target="#run-result" hx-swap="innerHTML"
+            class="bg-gray-600 text-white px-4 py-2 rounded text-sm hover:bg-gray-700">드라이런</button>
+    <span id="spinner" class="htmx-indicator text-gray-500 text-sm self-center">실행 중...</span>
+  </div>
+  <div id="run-result" class="mt-4 p-3 bg-gray-50 rounded text-sm text-gray-700 hidden"></div>
+</div>
+<div class="bg-white rounded-lg shadow">
+  <div class="px-6 py-4 border-b"><h2 class="font-semibold">최근 실행 이력</h2></div>
+  <table class="min-w-full text-sm">
+    <thead class="bg-gray-50"><tr>
+      <th class="px-6 py-3 text-left text-xs text-gray-500">시작 시간</th>
+      <th class="px-6 py-3 text-left text-xs text-gray-500">상태</th>
+      <th class="px-6 py-3 text-left text-xs text-gray-500">수집</th>
+      <th class="px-6 py-3 text-left text-xs text-gray-500">발행</th>
+      <th class="px-6 py-3 text-left text-xs text-gray-500">오류</th>
+    </tr></thead>
+    <tbody class="divide-y divide-gray-100">
+      <tr><td colspan="5" class="px-6 py-4 text-center text-gray-400">실행 이력 없음</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}

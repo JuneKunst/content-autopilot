@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}기사 상세 — Content Autopilot{% endblock %}
+{% block content %}
+<div class="mb-4"><a href="/dashboard/articles" class="text-sm text-blue-600 hover:underline">← 기사 목록</a></div>
+<div class="bg-white rounded-lg shadow p-6">
+  <h1 class="text-xl font-bold mb-2">기사 #{{ article_id }}</h1>
+  <p class="text-gray-500">이 기사의 상세 정보를 불러오는 중...</p>
+</div>
+{% endblock %}

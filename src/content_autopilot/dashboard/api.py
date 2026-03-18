@@ -8,7 +8,9 @@ from typing import Any
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi.requests import Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from content_autopilot.config import settings
@@ -17,6 +19,7 @@ log = structlog.get_logger("dashboard.api")
 
 router = APIRouter(prefix="/api", tags=["dashboard"])
 security = HTTPBasic()
+templates = Jinja2Templates(directory="src/content_autopilot/dashboard/templates")
 
 
 # ---------------------------------------------------------------------------
@@ -302,3 +305,44 @@ async def cancel_schedule(
     # Stub — scheduler integration in a later task
     log.info("dashboard.schedule.cancel", schedule_id=schedule_id)
     return None
+
+
+# ---------------------------------------------------------------------------
+# Dashboard HTML routes (T22, T23, T24)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/dashboard", include_in_schema=False)
+async def dashboard_home(request: Request, user: str = Depends(get_current_user)):
+    """Dashboard home page."""
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
+
+@router.get("/dashboard/articles", include_in_schema=False)
+async def dashboard_articles(request: Request, page: int = 1, user: str = Depends(get_current_user)):
+    """Articles list page."""
+    return templates.TemplateResponse("articles.html", {"request": request, "page": page})
+
+
+@router.get("/dashboard/articles/{article_id}", include_in_schema=False)
+async def dashboard_article_detail(request: Request, article_id: int, user: str = Depends(get_current_user)):
+    """Article detail page."""
+    return templates.TemplateResponse("article_detail.html", {"request": request, "article_id": article_id})
+
+
+@router.get("/dashboard/pipeline", include_in_schema=False)
+async def dashboard_pipeline(request: Request, user: str = Depends(get_current_user)):
+    """Pipeline management page."""
+    return templates.TemplateResponse("pipeline.html", {"request": request})
+
+
+@router.get("/dashboard/sources", include_in_schema=False)
+async def dashboard_sources(request: Request, user: str = Depends(get_current_user)):
+    """Sources management page."""
+    return templates.TemplateResponse("sources.html", {"request": request})
+
+
+@router.get("/dashboard/analytics", include_in_schema=False)
+async def dashboard_analytics(request: Request, user: str = Depends(get_current_user)):
+    """Analytics and monitoring page."""
+    return templates.TemplateResponse("analytics.html", {"request": request})

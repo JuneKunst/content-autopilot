@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Content Autopilot{% endblock %}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+  <span class="font-bold text-lg">Content Autopilot</span>
+  <div class="flex space-x-4 text-sm">
+    <a href="/dashboard" class="text-gray-600 hover:text-gray-900">홈</a>
+    <a href="/dashboard/articles" class="text-gray-600 hover:text-gray-900">기사</a>
+    <a href="/dashboard/pipeline" class="text-gray-600 hover:text-gray-900">파이프라인</a>
+    <a href="/dashboard/sources" class="text-gray-600 hover:text-gray-900">소스</a>
+    <a href="/dashboard/analytics" class="text-gray-600 hover:text-gray-900">분석</a>
+  </div>
+</nav>
+<main class="max-w-7xl mx-auto px-6 py-6">{% block content %}{% endblock %}</main>
+</body></html>

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}분석 & 모니터링 — Content Autopilot{% endblock %}
+{% block content %}
+<div hx-get="/dashboard/analytics" hx-trigger="every 30s" hx-target="this" hx-swap="innerHTML">
+<h1 class="text-2xl font-bold text-gray-900 mb-6">분석 & 모니터링</h1>
+<div id="budget-warning" class="hidden bg-yellow-50 border border-yellow-200 rounded p-4 mb-6">
+  <span class="text-yellow-700">⚠️ 월 예산의 80%를 초과했습니다</span>
+</div>
+<div class="bg-white rounded-lg shadow p-6 mb-6 pipeline-health">
+  <h2 class="font-semibold mb-4">파이프라인 건강 (최근 7일)</h2>
+  <table class="min-w-full text-sm">
+    <thead class="text-gray-500"><tr>
+      <th class="text-left py-2 pr-6">날짜</th><th class="text-left py-2 pr-6">상태</th><th class="text-left py-2 pr-6">수집</th><th class="text-left py-2">발행</th>
+    </tr></thead>
+    <tbody class="divide-y divide-gray-100">
+      <tr><td colspan="4" class="py-4 text-center text-gray-400">데이터 없음</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="ai-cost bg-white rounded-lg shadow p-6 mb-6">
+  <h2 class="font-semibold mb-4">AI 비용 모니터링</h2>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-gray-50 rounded p-4"><p class="text-xs text-gray-500">오늘 토큰</p><p class="text-2xl font-bold">0</p></div>
+    <div class="bg-gray-50 rounded p-4"><p class="text-xs text-gray-500">월간 토큰</p><p class="text-2xl font-bold">0</p></div>
+    <div class="bg-gray-50 rounded p-4"><p class="text-xs text-gray-500">오늘 비용</p><p class="text-2xl font-bold">$0.00</p></div>
+    <div class="bg-gray-50 rounded p-4"><p class="text-xs text-gray-500">월 예상</p><p class="text-2xl font-bold">$0.00 <span class="text-xs text-gray-400">/ $50</span></p></div>
+  </div>
+</div>
+<div class="bg-white rounded-lg shadow p-6">
+  <h2 class="font-semibold mb-4">채널별 발행 현황</h2>
+  <div class="grid grid-cols-3 gap-4">
+    {% for ch in [("Ghost 블로그","👻"),("Telegram","✈️"),("Discord","🎮")] %}
+    <div class="bg-gray-50 rounded p-4">
+      <p class="font-medium text-sm mb-1">{{ ch[1] }} {{ ch[0] }}</p>
+      <p class="text-2xl font-bold">0</p><p class="text-xs text-gray-500">성공 발행</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+<p class="text-xs text-gray-400 mt-4 text-right">30초마다 자동 새로고침</p>
+</div>
+{% endblock %}
