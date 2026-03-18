@@ -1,0 +1,44 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.0, pytest-9.0.2, pluggy-1.6.0 -- /Users/june/.pyenv/versions/3.13.0/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/june/content-autopilot
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 27 items
+
+tests/processing/test_dedup.py::TestNormalizeUrl::test_www_removed PASSED [  3%]
+tests/processing/test_dedup.py::TestNormalizeUrl::test_trailing_slash_removed PASSED [  7%]
+tests/processing/test_dedup.py::TestNormalizeUrl::test_www_and_trailing_slash PASSED [ 11%]
+tests/processing/test_dedup.py::TestNormalizeUrl::test_different_urls_differ PASSED [ 14%]
+tests/processing/test_dedup.py::TestNormalizeUrl::test_lowercase PASSED  [ 18%]
+tests/processing/test_dedup.py::TestNormalizeUrl::test_query_params_stripped PASSED [ 22%]
+tests/processing/test_dedup.py::TestCheckUrl::test_same_url_with_www_and_trailing_slash PASSED [ 25%]
+tests/processing/test_dedup.py::TestCheckUrl::test_different_urls_not_duplicate PASSED [ 29%]
+tests/processing/test_dedup.py::TestCheckUrl::test_identical_urls PASSED [ 33%]
+tests/processing/test_dedup.py::TestCheckUrl::test_different_domains PASSED [ 37%]
+tests/processing/test_dedup.py::TestCheckTitle::test_reordered_words_duplicate PASSED [ 40%]
+tests/processing/test_dedup.py::TestCheckTitle::test_completely_different_titles_not_duplicate PASSED [ 44%]
+tests/processing/test_dedup.py::TestCheckTitle::test_identical_titles PASSED [ 48%]
+tests/processing/test_dedup.py::TestCheckTitle::test_similar_but_different_topics PASSED [ 51%]
+tests/processing/test_dedup.py::TestCheckTitle::test_punctuation_ignored PASSED [ 55%]
+tests/processing/test_dedup.py::TestCheckTitle::test_threshold_respected PASSED [ 59%]
+tests/processing/test_dedup.py::TestDeduplicate::test_empty_list PASSED  [ 62%]
+tests/processing/test_dedup.py::TestDeduplicate::test_no_duplicates PASSED [ 66%]
+tests/processing/test_dedup.py::TestDeduplicate::test_url_duplicates_returns_two_items PASSED [ 70%]
+tests/processing/test_dedup.py::TestDeduplicate::test_keeps_higher_engagement_item PASSED [ 74%]
+tests/processing/test_dedup.py::TestDeduplicate::test_keeps_higher_engagement_first_item PASSED [ 77%]
+tests/processing/test_dedup.py::TestDeduplicate::test_title_duplicates_removed PASSED [ 81%]
+tests/processing/test_dedup.py::TestDeduplicate::test_single_item PASSED [ 85%]
+tests/processing/test_dedup.py::TestDeduplicate::test_cross_platform_dedup PASSED [ 88%]
+tests/processing/test_dedup.py::TestFindDuplicates::test_no_duplicates_empty_result PASSED [ 92%]
+tests/processing/test_dedup.py::TestFindDuplicates::test_url_duplicate_detected PASSED [ 96%]
+tests/processing/test_dedup.py::TestFindDuplicates::test_returns_correct_indices PASSED [100%]
+
+=============================== warnings summary ===============================
+tests/processing/test_dedup.py: 22 warnings
+  /Users/june/.pyenv/versions/3.13.0/lib/python3.13/site-packages/pydantic/main.py:250: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 27 passed, 22 warnings in 0.18s ========================
