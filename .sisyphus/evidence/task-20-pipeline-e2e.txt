@@ -1,0 +1,29 @@
+Task 20 - Pipeline Orchestrator verification evidence
+Date: 2026-03-18
+
+1) Unit tests
+Command:
+python -m pytest tests/test_pipeline.py
+
+Result:
+- 3 collected tests passed
+- 0 failures
+- runtime: 0.31s
+
+2) CLI dry-run verification
+Command:
+python -m content_autopilot.cli run-pipeline --dry-run
+
+Result:
+- Command executed successfully (CLI invocation path works)
+- Output included stage counts:
+  Collected: 19 -> Deduped: 16 -> Scored: 3 -> Published: 0
+- Status: failed due to missing AI auth header in local environment
+  (expected in this environment; does not affect command wiring)
+
+3) LSP diagnostics on changed Python files
+- src/content_autopilot/orchestrator/pipeline.py: no errors
+- src/content_autopilot/orchestrator/scheduler.py: no errors
+- src/content_autopilot/orchestrator/__init__.py: no errors
+- src/content_autopilot/cli.py: no errors
+- tests/test_pipeline.py: no errors
