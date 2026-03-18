@@ -1,6 +1,7 @@
 import time
 from dataclasses import dataclass
 from enum import Enum
+from typing import TypedDict
 
 import httpx
 import structlog
@@ -22,7 +23,14 @@ class AIProvider(str, Enum):
     CLAUDE = "claude"
 
 
-PROVIDER_CONFIGS: dict[AIProvider, dict[str, str | float]] = {
+class ProviderConfig(TypedDict):
+    url: str
+    model: str
+    input_cost: float
+    output_cost: float
+
+
+PROVIDER_CONFIGS: dict[AIProvider, ProviderConfig] = {
     AIProvider.OPENAI: {
         "url": "https://api.openai.com/v1/chat/completions",
         "model": "gpt-4o-mini",
@@ -49,7 +57,7 @@ class AIResponse:
     content: str
     usage: dict[str, int]
     model: str
-    provider: str
+    provider: str = ""
 
 
 class AIAuthError(Exception):
@@ -129,6 +137,8 @@ class AIClient:
     ) -> AIResponse:
         config = PROVIDER_CONFIGS[provider]
         api_key = self._api_keys[provider]
+        url = str(config["url"])
+        model = str(config["model"])
 
         messages: list[dict[str, str]] = []
         if system_prompt:
@@ -136,7 +146,7 @@ class AIClient:
         messages.append({"role": "user", "content": prompt})
 
         payload = {
-            "model": config["model"],
+            "model": model,
             "messages": messages,
             "temperature": temperature,
         }
@@ -156,7 +166,7 @@ class AIClient:
         async def _call() -> AIResponse:
             start = time.monotonic()
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                resp = await client.post(config["url"], json=payload, headers=headers)
+                resp = await client.post(url, json=payload, headers=headers)
             duration = time.monotonic() - start
 
             if resp.status_code == 401:
@@ -179,7 +189,6 @@ class AIClient:
             self._total_tokens["input"] += usage["input_tokens"]
             self._total_tokens["output"] += usage["output_tokens"]
 
-            model = str(config["model"])
             log.info(
                 "ai_api_call",
                 provider=provider.value,
@@ -206,9 +215,11 @@ class AIClient:
     ) -> AIResponse:
         config = PROVIDER_CONFIGS[provider]
         api_key = self._api_keys[provider]
+        url = str(config["url"])
+        model = str(config["model"])
 
         payload: dict[str, str | float | int | list[dict[str, str]]] = {
-            "model": str(config["model"]),
+            "model": model,
             "max_tokens": 4096,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": temperature,
@@ -233,7 +244,7 @@ class AIClient:
         async def _call() -> AIResponse:
             start = time.monotonic()
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                resp = await client.post(config["url"], json=payload, headers=headers)
+                resp = await client.post(url, json=payload, headers=headers)
             duration = time.monotonic() - start
 
             if resp.status_code == 401:
@@ -257,7 +268,6 @@ class AIClient:
             self._total_tokens["input"] += usage["input_tokens"]
             self._total_tokens["output"] += usage["output_tokens"]
 
-            model = str(config["model"])
             log.info(
                 "ai_api_call",
                 provider=provider.value,

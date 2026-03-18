@@ -1,6 +1,3 @@
-"""Tests for DeepSeek AI client and prompt loader."""
-
-import json
 import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -10,10 +7,8 @@ import pytest
 
 from content_autopilot.ai.client import (
     AIResponse,
-    DeepSeekAuthError,
-    DeepSeekClient,
-    DeepSeekRateLimitError,
-    DeepSeekServerError,
+    AIClient,
+    AIProvider,
 )
 from content_autopilot.ai.prompts import PromptLoader
 
@@ -22,14 +17,13 @@ from content_autopilot.ai.prompts import PromptLoader
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_api_response(
+def _make_openai_like_response(
     content: str = "Hello",
     input_tokens: int = 10,
     output_tokens: int = 20,
-    model: str = "deepseek-chat",
+    model: str = "gpt-4o-mini",
     status_code: int = 200,
 ) -> MagicMock:
-    """Build a mock httpx.Response for DeepSeek API."""
     body = {
         "choices": [{"message": {"content": content}}],
         "usage": {
@@ -46,15 +40,16 @@ def _make_api_response(
     return mock_resp
 
 
-# ---------------------------------------------------------------------------
-# DeepSeekClient.chat() — happy path
-# ---------------------------------------------------------------------------
-
 @pytest.mark.asyncio
 async def test_chat_returns_ai_response():
-    """chat() returns an AIResponse with correct fields."""
-    client = DeepSeekClient(api_key="test-key")
-    mock_resp = _make_api_response(content="Test answer", input_tokens=5, output_tokens=15)
+    client = AIClient(max_retries=1)
+    client._api_keys[AIProvider.OPENAI] = "openai-key"
+    mock_resp = _make_openai_like_response(
+        content="Test answer",
+        input_tokens=5,
+        output_tokens=15,
+        model="gpt-4o-mini",
+    )
 
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=mock_resp):
         result = await client.chat("What is 2+2?")
@@ -64,39 +59,102 @@ async def test_chat_returns_ai_response():
     assert result.usage["input_tokens"] == 5
     assert result.usage["output_tokens"] == 15
     assert result.usage["total_tokens"] == 20
-    assert result.model == "deepseek-chat"
+    assert result.model == "gpt-4o-mini"
+    assert result.provider == "openai"
 
 
 @pytest.mark.asyncio
-async def test_chat_with_system_prompt():
-    """chat() includes system prompt in messages when provided."""
-    client = DeepSeekClient(api_key="test-key")
-    mock_resp = _make_api_response(content="OK")
+async def test_chat_falls_back_to_gemini_on_openai_auth_error():
+    client = AIClient(
+        primary=AIProvider.OPENAI,
+        fallbacks=[AIProvider.GEMINI],
+        max_retries=1,
+    )
+    client._api_keys[AIProvider.OPENAI] = "bad-openai-key"
+    client._api_keys[AIProvider.GEMINI] = "gemini-key"
+
+    openai_auth_error = _make_openai_like_response(status_code=401)
+    gemini_success = _make_openai_like_response(
+        content="Gemini answer",
+        model="gemini-2.0-flash-lite",
+    )
     captured_payload = {}
+    called_urls: list[str] = []
+    call_count = 0
 
     async def fake_post(url, *, json=None, headers=None, **kwargs):
-        captured_payload.update(json or {})
-        return mock_resp
+        nonlocal call_count
+        call_count += 1
+        called_urls.append(url)
+        captured_payload["headers"] = headers
+        if call_count == 1:
+            return openai_auth_error
+        return gemini_success
 
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock, side_effect=fake_post):
-        await client.chat("User msg", system_prompt="You are helpful.")
+        result = await client.chat("User msg", system_prompt="You are helpful.")
 
-    messages = captured_payload["messages"]
-    assert messages[0] == {"role": "system", "content": "You are helpful."}
-    assert messages[1] == {"role": "user", "content": "User msg"}
+    assert result.content == "Gemini answer"
+    assert result.provider == "gemini"
+    assert called_urls[0] == "https://api.openai.com/v1/chat/completions"
+    assert called_urls[1] == "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+    assert captured_payload["headers"]["Authorization"] == "Bearer gemini-key"
 
 
-# ---------------------------------------------------------------------------
-# Token tracking
-# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_chat_raises_runtime_error_when_all_provider_keys_missing():
+    client = AIClient(
+        primary=AIProvider.OPENAI,
+        fallbacks=[AIProvider.GEMINI, AIProvider.CLAUDE],
+        max_retries=1,
+    )
+    client._api_keys[AIProvider.OPENAI] = ""
+    client._api_keys[AIProvider.GEMINI] = ""
+    client._api_keys[AIProvider.CLAUDE] = ""
+
+    with pytest.raises(RuntimeError, match="No AI provider available"):
+        await client.chat("Hello")
+
+@pytest.mark.asyncio
+async def test_call_claude_uses_expected_headers_and_payload_format():
+    client = AIClient(primary=AIProvider.CLAUDE, max_retries=1)
+    client._api_keys[AIProvider.CLAUDE] = "claude-key"
+    captured = {}
+
+    claude_body = {
+        "content": [{"text": "Claude says hi"}],
+        "usage": {"input_tokens": 11, "output_tokens": 22},
+    }
+    claude_resp = MagicMock(spec=httpx.Response)
+    claude_resp.status_code = 200
+    claude_resp.json.return_value = claude_body
+    claude_resp.raise_for_status = MagicMock()
+
+    async def fake_post(url, *, json=None, headers=None, **kwargs):
+        captured["url"] = url
+        captured["json"] = json
+        captured["headers"] = headers
+        return claude_resp
+
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock, side_effect=fake_post):
+        result = await client.chat("Ping", system_prompt="System context")
+
+    assert result.content == "Claude says hi"
+    assert result.provider == "claude"
+    assert captured["url"] == "https://api.anthropic.com/v1/messages"
+    assert captured["headers"]["x-api-key"] == "claude-key"
+    assert "Authorization" not in captured["headers"]
+    assert captured["json"]["messages"] == [{"role": "user", "content": "Ping"}]
+    assert captured["json"]["system"] == "System context"
+
 
 @pytest.mark.asyncio
 async def test_token_tracking_accumulates():
-    """total_tokens_used accumulates across multiple calls."""
-    client = DeepSeekClient(api_key="test-key")
+    client = AIClient(max_retries=1)
+    client._api_keys[AIProvider.OPENAI] = "openai-key"
 
-    mock_resp1 = _make_api_response(input_tokens=10, output_tokens=20)
-    mock_resp2 = _make_api_response(input_tokens=30, output_tokens=40)
+    mock_resp1 = _make_openai_like_response(input_tokens=10, output_tokens=20)
+    mock_resp2 = _make_openai_like_response(input_tokens=30, output_tokens=40)
 
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock, side_effect=[mock_resp1, mock_resp2]):
         await client.chat("First")
@@ -106,80 +164,17 @@ async def test_token_tracking_accumulates():
     assert client.total_tokens_used["output"] == 60
 
 
-# ---------------------------------------------------------------------------
-# estimate_monthly_cost()
-# ---------------------------------------------------------------------------
-
 def test_estimate_monthly_cost_zero_when_no_calls():
-    client = DeepSeekClient(api_key="test-key")
+    client = AIClient()
     assert client.estimate_monthly_cost() == 0.0
 
 
 def test_estimate_monthly_cost_calculation():
-    """Cost = input * 0.27/MTok + output * 1.10/MTok."""
-    client = DeepSeekClient(api_key="test-key")
-    # Manually inject token counts
-    client._total_tokens_used["input"] = 1_000_000   # 1 MTok → $0.27
-    client._total_tokens_used["output"] = 1_000_000  # 1 MTok → $1.10
-    cost = client.estimate_monthly_cost()
-    assert abs(cost - 1.37) < 1e-5
-
-
-# ---------------------------------------------------------------------------
-# Error handling
-# ---------------------------------------------------------------------------
-
-@pytest.mark.asyncio
-async def test_chat_raises_auth_error_on_401():
-    client = DeepSeekClient(api_key="bad-key", max_retries=1)
-    mock_resp = _make_api_response(status_code=401)
-    mock_resp.raise_for_status = MagicMock()
-
-    with patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=mock_resp):
-        with pytest.raises(DeepSeekAuthError):
-            await client.chat("Hello")
-
-
-@pytest.mark.asyncio
-async def test_chat_raises_server_error_on_500():
-    client = DeepSeekClient(api_key="test-key", max_retries=1)
-    mock_resp = _make_api_response(status_code=500)
-    mock_resp.raise_for_status = MagicMock()
-
-    with patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=mock_resp):
-        with pytest.raises(DeepSeekServerError):
-            await client.chat("Hello")
-
-
-# ---------------------------------------------------------------------------
-# Retry logic
-# ---------------------------------------------------------------------------
-
-@pytest.mark.asyncio
-async def test_chat_retries_on_rate_limit_then_succeeds():
-    """Retries on 429 and succeeds on the third attempt."""
-    client = DeepSeekClient(api_key="test-key", max_retries=3)
-
-    rate_limit_resp = _make_api_response(status_code=429)
-    rate_limit_resp.raise_for_status = MagicMock()
-    success_resp = _make_api_response(content="Finally!", input_tokens=5, output_tokens=5)
-
-    call_count = 0
-
-    async def flaky_post(url, *, json=None, headers=None, **kwargs):
-        nonlocal call_count
-        call_count += 1
-        if call_count < 3:
-            return rate_limit_resp
-        return success_resp
-
-    with patch("httpx.AsyncClient.post", new_callable=AsyncMock, side_effect=flaky_post):
-        # Patch tenacity wait to avoid actual sleeping in tests
-        with patch("tenacity.wait_exponential.__call__", return_value=0):
-            result = await client.chat("Hello")
-
-    assert result.content == "Finally!"
-    assert call_count == 3
+    client = AIClient()
+    client._total_tokens["input"] = 1_000_000
+    client._total_tokens["output"] = 1_000_000
+    cost = client.estimate_monthly_cost(provider=AIProvider.OPENAI)
+    assert abs(cost - 0.75) < 1e-5
 
 
 # ---------------------------------------------------------------------------

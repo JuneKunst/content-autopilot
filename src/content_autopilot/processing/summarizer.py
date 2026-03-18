@@ -4,7 +4,7 @@ import json
 import re
 from typing import Protocol
 
-from content_autopilot.ai.client import AIResponse, DeepSeekClient
+from content_autopilot.ai.client import AIClient, AIResponse
 from content_autopilot.common.logger import get_logger
 from content_autopilot.common.text_utils import truncate
 from content_autopilot.schemas import SummaryResult
@@ -25,7 +25,7 @@ class ChatClient(Protocol):
 
 class Summarizer:
     def __init__(self, client: ChatClient | None = None) -> None:
-        self._client = client or DeepSeekClient()
+        self._client = client or AIClient()
 
     async def process(
         self,

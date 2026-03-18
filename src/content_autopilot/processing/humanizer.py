@@ -7,7 +7,7 @@ from typing import Protocol
 
 import yaml
 
-from content_autopilot.ai.client import AIResponse, DeepSeekClient
+from content_autopilot.ai.client import AIClient, AIResponse
 from content_autopilot.common.logger import get_logger
 from content_autopilot.schemas import ArticleDraft, SummaryResult
 
@@ -39,7 +39,7 @@ class Humanizer:
         persona_path: str = DEFAULT_PERSONA_PATH,
         client: ChatClient | None = None,
     ) -> None:
-        self._client: ChatClient = client or DeepSeekClient()
+        self._client: ChatClient = client or AIClient()
         self._persona: dict[str, object] = self._load_persona(persona_path)
 
     def _load_persona(self, persona_path: str) -> dict[str, object]:

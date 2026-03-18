@@ -2,6 +2,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    openai_api_key: str = ""
+    gemini_api_key: str = ""
+    claude_api_key: str = ""
     deepseek_api_key: str = ""
     ghost_url: str = "http://localhost:2368"
     ghost_admin_key: str = ""
@@ -22,6 +25,12 @@ class Settings(BaseSettings):
     wp_site_url: str = ""
     wp_username: str = ""
     wp_app_password: str = ""
+    naver_id: str = ""
+    naver_password: str = ""
+    naver_blog_id: str = ""
+    tistory_email: str = ""
+    tistory_password: str = ""
+    tistory_blog_name: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
