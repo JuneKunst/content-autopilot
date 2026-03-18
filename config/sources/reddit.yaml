@@ -1,0 +1,10 @@
+subreddits:
+  - technology
+  - programming
+  - MachineLearning
+  - artificial
+  - startups
+  - worldnews
+sort_by: hot
+time_filter: day
+min_upvotes: 10
