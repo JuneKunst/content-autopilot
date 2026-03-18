@@ -1,0 +1,82 @@
+TASK 3: Pydantic Data Models (Schemas) Validation
+==================================================
+
+COMPLETION DATE: 2024-03-18
+STATUS: ✅ COMPLETE
+
+DELIVERABLES CREATED:
+======================
+
+1. src/content_autopilot/schemas/items.py
+   - RawItem: Raw content item with source, title, url, engagement, metadata
+   - ScoredItem: Scored item with raw_item, score, breakdown, is_duplicate
+
+2. src/content_autopilot/schemas/ai.py
+   - SummaryResult: T15→T16 contract with summary_ko, source_url, source_title, key_points
+   - ArticleDraft: Draft article with title_ko, content_ko, summary_ko, source_attribution
+
+3. src/content_autopilot/schemas/publishing.py
+   - PublishRequest: Publish request with article_draft, channels, scheduled_at
+   - PublishResult: Publish result with channel, status, external_url, error
+
+4. src/content_autopilot/schemas/pipeline.py
+   - PipelineStatus: Pipeline status with run_id, stage, items_count, errors, started_at
+
+5. src/content_autopilot/schemas/config.py
+   - PersonaConfig: Persona configuration with name, tone, language, style_rules
+   - SourceConfig: Source configuration with type, endpoint, params, schedule, enabled
+
+6. src/content_autopilot/schemas/__init__.py
+   - Exports all 9 models for easy importing
+
+VALIDATION RESULTS:
+===================
+
+✓ All 9 models instantiate correctly
+✓ All models use Pydantic v2 BaseModel
+✓ All models use model_config = ConfigDict(...) syntax (not class Config:)
+✓ RawItem has json_schema_extra example
+✓ ArticleDraft has json_schema_extra example
+✓ All optional fields have sensible defaults
+✓ datetime fields use Field(default_factory=datetime.utcnow)
+✓ Import test passes: from content_autopilot.schemas import RawItem, ScoredItem, ArticleDraft, PublishRequest, PersonaConfig, SummaryResult
+
+IMPORT VERIFICATION:
+====================
+
+Command: python -c "from content_autopilot.schemas import RawItem, ScoredItem, ArticleDraft, PublishRequest, PersonaConfig, SummaryResult; print('OK')"
+Result: OK ✅
+
+INSTANTIATION TESTS:
+====================
+
+✓ RawItem: source=hn
+✓ ScoredItem: score=0.85
+✓ SummaryResult: summary_ko=요약
+✓ ArticleDraft: title_ko=제목
+✓ PublishRequest: channels=['ghost']
+✓ PublishResult: status=success
+✓ PipelineStatus: stage=collecting
+✓ PersonaConfig: name=Tech Writer
+✓ SourceConfig: type=hn
+
+All 9 models validated successfully!
+
+PYDANTIC V2 COMPLIANCE:
+=======================
+
+✓ Using BaseModel from pydantic
+✓ Using ConfigDict for model configuration
+✓ Using Field() for default factories
+✓ Using datetime from standard library
+✓ Using type hints with | for unions (Python 3.10+ syntax)
+✓ All models follow Pydantic v2 best practices
+
+NOTES:
+======
+
+- SummaryResult is the critical T15→T16 contract between summarizer and humanizer tasks
+- All models support JSON serialization via Pydantic
+- Examples provided for RawItem and ArticleDraft for documentation
+- All optional fields have sensible defaults to prevent validation errors
+- Models are ready for use in FastAPI endpoints and database operations

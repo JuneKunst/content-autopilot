@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./config:/app/config
+      - ./src:/app/src
+    environment:
+      - DB_URL=postgresql+asyncpg://autopilot:autopilot@postgres:5432/content_autopilot
+
+  ghost:
+    image: ghost:5
+    ports:
+      - "2368:2368"
+    environment:
+      url: http://localhost:2368
+      database__client: sqlite3
+      database__connection__filename: /var/lib/ghost/content/data/ghost.db
+      NODE_ENV: production
+    volumes:
+      - ghost_data:/var/lib/ghost/content
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2368/ghost/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: autopilot
+      POSTGRES_PASSWORD: autopilot
+      POSTGRES_DB: content_autopilot
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autopilot -d content_autopilot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  ghost_data:
+  postgres_data:
