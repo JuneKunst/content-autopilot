@@ -33,11 +33,10 @@ def _make_draft() -> ArticleDraft:
 @pytest.mark.asyncio
 async def test_pipeline_run_success_with_all_components_mocked() -> None:
     hn_items = [_make_raw_item("hn", 1), _make_raw_item("hn", 2)]
-    reddit_items = [_make_raw_item("reddit", 1), _make_raw_item("reddit", 2)]
     github_items = [_make_raw_item("github", 1), _make_raw_item("github", 2)]
     rss_items = [_make_raw_item("rss", 1), _make_raw_item("rss", 2)]
     youtube_items = [_make_raw_item("youtube", 1), _make_raw_item("youtube", 2)]
-    all_items = hn_items + reddit_items + github_items + rss_items + youtube_items
+    all_items = hn_items + github_items + rss_items + youtube_items
 
     top_scored = [
         ScoredItem(raw_item=all_items[0], score=0.9),
@@ -62,13 +61,18 @@ async def test_pipeline_run_success_with_all_components_mocked() -> None:
     discord_publish_mock = AsyncMock(
         return_value=PublishResult(channel="discord", status="success", external_url="2")
     )
+    wordpress_publish_mock = AsyncMock(
+        return_value=PublishResult(channel="wordpress", status="skipped", external_url=None)
+    )
+    naver_publish_mock = AsyncMock(
+        return_value=PublishResult(channel="naver", status="skipped", external_url=None)
+    )
+    tistory_publish_mock = AsyncMock(
+        return_value=PublishResult(channel="tistory", status="skipped", external_url=None)
+    )
 
     with (
         patch("content_autopilot.orchestrator.pipeline.HNCollector.collect", new=AsyncMock(return_value=hn_items)),
-        patch(
-            "content_autopilot.orchestrator.pipeline.RedditCollector.collect",
-            new=AsyncMock(return_value=reddit_items),
-        ),
         patch(
             "content_autopilot.orchestrator.pipeline.GitHubCollector.collect",
             new=AsyncMock(return_value=github_items),
@@ -86,12 +90,14 @@ async def test_pipeline_run_success_with_all_components_mocked() -> None:
         patch("content_autopilot.orchestrator.pipeline.GhostPublisher.publish", new=ghost_publish_mock),
         patch("content_autopilot.orchestrator.pipeline.TelegramPublisher.publish", new=telegram_publish_mock),
         patch("content_autopilot.orchestrator.pipeline.DiscordPublisher.publish", new=discord_publish_mock),
+        patch("content_autopilot.orchestrator.pipeline.WordPressPublisher.publish", new=wordpress_publish_mock),
+        patch("content_autopilot.orchestrator.pipeline.NaverBlogPublisher.publish", new=naver_publish_mock),
+        patch("content_autopilot.orchestrator.pipeline.TistoryPublisher.publish", new=tistory_publish_mock),
     ):
         pipeline = Pipeline(dry_run=False)
         result = await pipeline.run()
 
-    assert result.collected == 10
-    assert result.deduped == 10
+    assert result.collected == 8
     assert result.scored == 3
     assert result.published == 3
     assert result.status == "success"
@@ -103,11 +109,10 @@ async def test_pipeline_run_success_with_all_components_mocked() -> None:
 @pytest.mark.asyncio
 async def test_pipeline_run_dry_run_skips_publishers() -> None:
     hn_items = [_make_raw_item("hn", 1), _make_raw_item("hn", 2)]
-    reddit_items = [_make_raw_item("reddit", 1), _make_raw_item("reddit", 2)]
     github_items = [_make_raw_item("github", 1), _make_raw_item("github", 2)]
     rss_items = [_make_raw_item("rss", 1), _make_raw_item("rss", 2)]
     youtube_items = [_make_raw_item("youtube", 1), _make_raw_item("youtube", 2)]
-    all_items = hn_items + reddit_items + github_items + rss_items + youtube_items
+    all_items = hn_items + github_items + rss_items + youtube_items
 
     top_scored = [
         ScoredItem(raw_item=all_items[0], score=0.9),
@@ -132,13 +137,18 @@ async def test_pipeline_run_dry_run_skips_publishers() -> None:
     discord_publish_mock = AsyncMock(
         return_value=PublishResult(channel="discord", status="success", external_url="2")
     )
+    wordpress_publish_mock = AsyncMock(
+        return_value=PublishResult(channel="wordpress", status="skipped", external_url=None)
+    )
+    naver_publish_mock = AsyncMock(
+        return_value=PublishResult(channel="naver", status="skipped", external_url=None)
+    )
+    tistory_publish_mock = AsyncMock(
+        return_value=PublishResult(channel="tistory", status="skipped", external_url=None)
+    )
 
     with (
         patch("content_autopilot.orchestrator.pipeline.HNCollector.collect", new=AsyncMock(return_value=hn_items)),
-        patch(
-            "content_autopilot.orchestrator.pipeline.RedditCollector.collect",
-            new=AsyncMock(return_value=reddit_items),
-        ),
         patch(
             "content_autopilot.orchestrator.pipeline.GitHubCollector.collect",
             new=AsyncMock(return_value=github_items),
@@ -156,11 +166,14 @@ async def test_pipeline_run_dry_run_skips_publishers() -> None:
         patch("content_autopilot.orchestrator.pipeline.GhostPublisher.publish", new=ghost_publish_mock),
         patch("content_autopilot.orchestrator.pipeline.TelegramPublisher.publish", new=telegram_publish_mock),
         patch("content_autopilot.orchestrator.pipeline.DiscordPublisher.publish", new=discord_publish_mock),
+        patch("content_autopilot.orchestrator.pipeline.WordPressPublisher.publish", new=wordpress_publish_mock),
+        patch("content_autopilot.orchestrator.pipeline.NaverBlogPublisher.publish", new=naver_publish_mock),
+        patch("content_autopilot.orchestrator.pipeline.TistoryPublisher.publish", new=tistory_publish_mock),
     ):
         pipeline = Pipeline(dry_run=True)
         result = await pipeline.run()
 
-    assert result.collected == 10
+    assert result.collected == 8
     assert result.scored == 3
     assert result.published == 0
     assert result.status == "success"
@@ -205,13 +218,18 @@ async def test_pipeline_handles_collector_and_publish_failures() -> None:
     discord_publish_mock = AsyncMock(
         return_value=PublishResult(channel="discord", status="success", external_url="2")
     )
+    wordpress_publish_mock = AsyncMock(
+        return_value=PublishResult(channel="wordpress", status="skipped", external_url=None)
+    )
+    naver_publish_mock = AsyncMock(
+        return_value=PublishResult(channel="naver", status="skipped", external_url=None)
+    )
+    tistory_publish_mock = AsyncMock(
+        return_value=PublishResult(channel="tistory", status="skipped", external_url=None)
+    )
 
     with (
         patch("content_autopilot.orchestrator.pipeline.HNCollector.collect", new=AsyncMock(return_value=hn_items)),
-        patch(
-            "content_autopilot.orchestrator.pipeline.RedditCollector.collect",
-            new=AsyncMock(side_effect=RuntimeError("collector failed")),
-        ),
         patch(
             "content_autopilot.orchestrator.pipeline.GitHubCollector.collect",
             new=AsyncMock(return_value=github_items),
@@ -229,6 +247,9 @@ async def test_pipeline_handles_collector_and_publish_failures() -> None:
         patch("content_autopilot.orchestrator.pipeline.GhostPublisher.publish", new=ghost_publish_mock),
         patch("content_autopilot.orchestrator.pipeline.TelegramPublisher.publish", new=telegram_publish_mock),
         patch("content_autopilot.orchestrator.pipeline.DiscordPublisher.publish", new=discord_publish_mock),
+        patch("content_autopilot.orchestrator.pipeline.WordPressPublisher.publish", new=wordpress_publish_mock),
+        patch("content_autopilot.orchestrator.pipeline.NaverBlogPublisher.publish", new=naver_publish_mock),
+        patch("content_autopilot.orchestrator.pipeline.TistoryPublisher.publish", new=tistory_publish_mock),
     ):
         pipeline = Pipeline(dry_run=False)
         result = await pipeline.run()

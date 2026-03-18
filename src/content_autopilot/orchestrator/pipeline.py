@@ -6,7 +6,6 @@ from typing import cast
 
 from content_autopilot.collectors.github import GitHubCollector
 from content_autopilot.collectors.hn import HNCollector
-from content_autopilot.collectors.reddit import RedditCollector
 from content_autopilot.collectors.rss import RSSCollector
 from content_autopilot.collectors.youtube import YouTubeCollector
 from content_autopilot.common.logger import get_logger
@@ -16,7 +15,10 @@ from content_autopilot.processing.scorer import ScoringEngine
 from content_autopilot.processing.summarizer import Summarizer
 from content_autopilot.publishers.discord import DiscordPublisher
 from content_autopilot.publishers.ghost import GhostPublisher
+from content_autopilot.publishers.naver_blog import NaverBlogPublisher
 from content_autopilot.publishers.telegram import TelegramPublisher
+from content_autopilot.publishers.tistory import TistoryPublisher
+from content_autopilot.publishers.wordpress import WordPressPublisher
 from content_autopilot.schemas import ArticleDraft, RawItem
 
 log = get_logger("orchestrator.pipeline")
@@ -51,6 +53,9 @@ class Pipeline:
         self._ghost: GhostPublisher = GhostPublisher()
         self._telegram: TelegramPublisher = TelegramPublisher()
         self._discord: DiscordPublisher = DiscordPublisher()
+        self._wordpress: WordPressPublisher = WordPressPublisher()
+        self._naver: NaverBlogPublisher = NaverBlogPublisher()
+        self._tistory: TistoryPublisher = TistoryPublisher()
 
     async def run(self) -> PipelineResult:
         result = PipelineResult()
@@ -123,6 +128,9 @@ class Pipeline:
 
                 _ = await self._telegram.publish(draft, ghost_url=ghost_url)
                 _ = await self._discord.publish(draft, ghost_url=ghost_url)
+                _ = await self._wordpress.publish(draft)
+                _ = await self._naver.publish(draft)
+                _ = await self._tistory.publish(draft)
 
                 if ghost_result.status == "success":
                     result.published += 1
@@ -137,7 +145,6 @@ class Pipeline:
     async def _collect_all(self) -> list[RawItem]:
         collectors = [
             HNCollector().collect(limit=10),
-            RedditCollector().collect(limit=10),
             GitHubCollector().collect(limit=5),
             RSSCollector().collect(limit=10),
             YouTubeCollector().collect(limit=5),

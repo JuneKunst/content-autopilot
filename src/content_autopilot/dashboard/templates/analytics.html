@@ -28,8 +28,8 @@
 </div>
 <div class="bg-white rounded-lg shadow p-6 mb-6">
   <h2 class="font-semibold mb-4">채널별 발행 현황</h2>
-  <div class="grid grid-cols-3 gap-4">
-    {% for ch in [("Ghost 블로그","👻"),("Telegram","✈️"),("Discord","🎮")] %}
+  <div class="grid grid-cols-3 md:grid-cols-6 gap-4">
+    {% for ch in [("Ghost 블로그","👻"),("Telegram","✈️"),("Discord","🎮"),("WordPress","📝"),("Naver Blog","🔗"),("Tistory","📖")] %}
     <div class="bg-gray-50 rounded p-4">
       <p class="font-medium text-sm mb-1">{{ ch[1] }} {{ ch[0] }}</p>
       <p class="text-2xl font-bold">0</p><p class="text-xs text-gray-500">성공 발행</p>
