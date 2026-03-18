@@ -1,0 +1,62 @@
+# Task 18: Telegram Publisher Implementation
+
+## Files Created
+1. src/content_autopilot/publishers/telegram.py - Telegram Bot publisher
+2. tests/publishers/test_telegram.py - Comprehensive pytest tests
+
+## Implementation Details
+
+### TelegramPublisher Class
+- __init__: Accepts optional bot_token and channel_id, falls back to settings
+- _format_message: Formats ArticleDraft as Telegram HTML message with:
+  - Bold title
+  - Summary (first 200 chars) or content fallback
+  - Ghost URL link (if provided)
+  - Source attribution link
+  - Hashtags from tags (first 5, spaces replaced with underscores)
+- publish: Async method that sends message to Telegram channel via Bot API
+  - Returns PublishResult with status (success/failed/skipped)
+  - Handles missing credentials gracefully
+  - Catches HTTP errors and generic exceptions
+
+### Test Coverage (11 tests)
+✓ Format message with all fields
+✓ Format message without ghost URL
+✓ Format message without tags
+✓ Summary truncation to 200 chars
+✓ Content fallback when summary empty
+✓ Tag space replacement with underscores
+✓ Successful publish with mocked httpx
+✓ Publish with no credentials (skipped)
+✓ Publish with HTTP 401 error
+✓ Publish with generic exception
+✓ Publish without ghost URL
+
+## Test Results
+============================= test session starts ==============================
+platform darwin -- Python 3.13.0, pytest-9.0.2, pluggy-1.6.0
+collected 11 items
+
+tests/publishers/test_telegram.py::TestTelegramPublisherFormatMessage::test_format_message_with_all_fields PASSED [  9%]
+tests/publishers/test_telegram.py::TestTelegramPublisherFormatMessage::test_format_message_without_ghost_url PASSED [ 18%]
+tests/publishers/test_telegram.py::TestTelegramPublisherFormatMessage::test_format_message_without_tags PASSED [ 27%]
+tests/publishers/test_telegram.py::TestTelegramPublisherFormatMessage::test_format_message_summary_truncation PASSED [ 36%]
+tests/publishers/test_telegram.py::TestTelegramPublisherFormatMessage::test_format_message_content_fallback PASSED [ 45%]
+tests/publishers/test_telegram.py::TestTelegramPublisherFormatMessage::test_format_message_tag_space_replacement PASSED [ 54%]
+tests/publishers/test_telegram.py::TestTelegramPublisherPublish::test_publish_success PASSED [ 63%]
+tests/publishers/test_telegram.py::TestTelegramPublisherPublish::test_publish_no_credentials PASSED [ 72%]
+tests/publishers/test_telegram.py::TestTelegramPublisherPublish::test_publish_http_error PASSED [ 81%]
+tests/publishers/test_telegram.py::TestTelegramPublisherPublish::test_publish_generic_exception PASSED [ 90%]
+tests/publishers/test_telegram.py::TestTelegramPublisherPublish::test_publish_without_ghost_url PASSED [100%]
+
+============================== 11 passed in 0.28s ==============================
+
+## Verification
+✓ All 11 tests pass
+✓ Uses Telegram Bot API: https://api.telegram.org/bot{token}/sendMessage
+✓ Supports HTML parse_mode with <b>, <i>, <a href=""> tags
+✓ Respects 4096 char limit (messages kept concise)
+✓ Handles both @channelname and numeric chat_id formats
+✓ Proper error handling and logging
+✓ Async/await pattern consistent with project
+✓ Mocked httpx for unit tests
