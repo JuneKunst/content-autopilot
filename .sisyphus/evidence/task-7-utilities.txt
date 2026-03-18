@@ -1,0 +1,64 @@
+TASK 7: Common Utilities Module - COMPLETED
+============================================
+
+DELIVERABLES CREATED:
+✓ src/content_autopilot/common/logger.py
+  - get_logger(name) function with structlog configuration
+  - Module-level log instance
+  - JSON output with ISO timestamps
+
+✓ src/content_autopilot/common/retry.py
+  - with_retry(max_attempts, min_wait, max_wait) decorator
+  - with_api_retry(max_attempts) decorator with 429 handling
+  - Exponential backoff strategy
+  - Handles httpx.HTTPError and httpx.TimeoutException
+
+✓ src/content_autopilot/common/rate_limiter.py
+  - RateLimiter class with token bucket algorithm
+  - Async-safe with asyncio.Lock()
+  - __init__(requests_per_minute) constructor
+  - acquire() method for rate-limited access
+  - reset() method to reinitialize
+
+✓ src/content_autopilot/common/config_loader.py
+  - load_yaml_config(config_path) for generic YAML loading
+  - load_source_config(source_type, base_dir) for source configs
+  - load_persona_config(persona_name, base_dir) for persona configs
+  - FileNotFoundError handling
+
+✓ src/content_autopilot/common/http_client.py
+  - create_client(timeout, headers) factory function
+  - USER_AGENT constant
+  - httpx.AsyncClient with default headers
+  - Follows redirects by default
+
+✓ src/content_autopilot/common/text_utils.py
+  - strip_html(html) using HTMLParser
+  - truncate(text, max_length, suffix) with configurable suffix
+  - extract_urls(text) using regex pattern
+  - normalize_whitespace(text) for whitespace normalization
+
+✓ src/content_autopilot/common/__init__.py
+  - Exports all public functions and classes
+  - __all__ list for explicit API
+
+VERIFICATION RESULTS:
+✓ All imports successful
+✓ logger.py: get_logger() instantiation works
+✓ retry.py: Both decorators available
+✓ rate_limiter.py: RateLimiter class instantiation works
+✓ config_loader.py: All three config loaders available
+✓ http_client.py: create_client() and USER_AGENT available
+✓ text_utils.py: All 4 text utilities work correctly
+  - strip_html("<p>Hello</p>") → "Hello"
+  - truncate("a"*100, max_length=10) → "aaaaaaa..."
+  - extract_urls("Visit https://example.com") → ['https://example.com']
+  - normalize_whitespace("hello   world  \n  test") → "hello world test"
+
+DEPENDENCIES VERIFIED:
+✓ structlog>=24.1.0 (logger)
+✓ tenacity>=8.2.0 (retry)
+✓ httpx>=0.25.0 (http_client)
+✓ pyyaml>=6.0.0 (config_loader)
+
+All utilities are production-ready and follow project conventions.
