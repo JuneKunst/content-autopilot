@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import heapq
 import importlib
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -9,6 +12,7 @@ import yaml
 
 from content_autopilot.common.logger import get_logger
 from content_autopilot.orchestrator.pipeline import Pipeline
+from content_autopilot.schemas import ArticleDraft
 
 log = get_logger("orchestrator.scheduler")
 
@@ -73,3 +77,82 @@ class PipelineScheduler:
             published=result.published,
             errors=len(result.errors),
         )
+
+
+# ---------------------------------------------------------------------------
+# ContentScheduler — priority queue with minimum interval enforcement
+# ---------------------------------------------------------------------------
+
+
+@dataclass(order=True)
+class ScheduledItem:
+    scheduled_at: datetime
+    score: float = field(compare=False)
+    article: ArticleDraft = field(compare=False)
+    retry_count: int = field(compare=False, default=0)
+    max_retries: int = field(compare=False, default=3)
+
+
+class ContentScheduler:
+    """Priority queue scheduler for content publishing with minimum interval enforcement."""
+
+    MIN_INTERVAL_HOURS = 2
+
+    def __init__(self) -> None:
+        self._queue: list[ScheduledItem] = []
+        self._failed: list[ScheduledItem] = []
+
+    def add_item(
+        self,
+        article: ArticleDraft,
+        score: float,
+        preferred_time: datetime | None = None,
+    ) -> datetime:
+        """Add article to queue, respecting minimum interval."""
+        scheduled_at = self._find_next_slot(preferred_time or datetime.now(timezone.utc))
+        item = ScheduledItem(scheduled_at=scheduled_at, score=score, article=article)
+        heapq.heappush(self._queue, item)
+        return scheduled_at
+
+    def _find_next_slot(self, desired_time: datetime) -> datetime:
+        """Find next available slot that respects MIN_INTERVAL_HOURS."""
+        if not self._queue:
+            return desired_time
+
+        latest = max(item.scheduled_at for item in self._queue)
+        min_next = latest + timedelta(hours=self.MIN_INTERVAL_HOURS)
+
+        return max(desired_time, min_next)
+
+    def get_queue(self) -> list[ScheduledItem]:
+        """Return queue sorted by scheduled_at."""
+        return sorted(self._queue, key=lambda x: x.scheduled_at)
+
+    def pop_due(self) -> list[ScheduledItem]:
+        """Pop all items due for publishing (scheduled_at <= now)."""
+        now = datetime.now(timezone.utc)
+        due = []
+        while self._queue and self._queue[0].scheduled_at <= now:
+            due.append(heapq.heappop(self._queue))
+        return due
+
+    def add_retry(self, item: ScheduledItem) -> bool:
+        """Schedule a failed item for retry. Returns True if retry scheduled, False if max retries exceeded."""
+        if item.retry_count >= item.max_retries:
+            self._failed.append(item)
+            return False
+        retry_item = ScheduledItem(
+            scheduled_at=datetime.now(timezone.utc) + timedelta(hours=self.MIN_INTERVAL_HOURS),
+            score=item.score,
+            article=item.article,
+            retry_count=item.retry_count + 1,
+            max_retries=item.max_retries,
+        )
+        heapq.heappush(self._queue, retry_item)
+        return True
+
+    def queue_size(self) -> int:
+        return len(self._queue)
+
+    def failed_count(self) -> int:
+        return len(self._failed)

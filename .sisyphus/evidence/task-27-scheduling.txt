@@ -1,0 +1,43 @@
+Task 27: Advanced Content Scheduling
+=====================================
+Date: 2026-03-18
+
+VERIFICATION
+------------
+$ python -c "from content_autopilot.orchestrator.scheduler import ContentScheduler; s = ContentScheduler(); print('OK')"
+OK
+
+TESTS PASSED
+------------
+- ContentScheduler instantiation: OK
+- queue_size() initial: 0
+- failed_count() initial: 0
+- add_item() returns scheduled datetime: OK
+- MIN_INTERVAL_HOURS=2 enforced: second slot = first + 2.0 hours
+- get_queue() returns sorted list: OK
+- add_retry() schedules retry item: OK
+- add_retry() moves to _failed when retry_count >= max_retries: OK
+
+FILES MODIFIED
+--------------
+1. src/content_autopilot/orchestrator/scheduler.py
+   - Added imports: heapq, dataclass, field, datetime, timedelta, timezone, ArticleDraft
+   - Added ScheduledItem dataclass (order=True, scheduled_at as sort key)
+   - Added ContentScheduler class with:
+     * MIN_INTERVAL_HOURS = 2
+     * add_item() with minimum interval enforcement
+     * _find_next_slot() using heapq-compatible max scan
+     * get_queue() sorted by scheduled_at
+     * pop_due() pops items with scheduled_at <= now
+     * add_retry() with max_retries enforcement
+     * queue_size() / failed_count()
+
+2. src/content_autopilot/dashboard/api.py
+   - Added import: ContentScheduler
+   - Added module-level _scheduler = ContentScheduler()
+   - Updated GET /api/schedule to return real queue data with scheduled_at, title, score
+
+LSP DIAGNOSTICS
+---------------
+scheduler.py: No errors
+api.py: No errors

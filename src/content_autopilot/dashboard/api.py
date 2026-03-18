@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from content_autopilot.config import settings
+from content_autopilot.orchestrator.scheduler import ContentScheduler
 
 log = structlog.get_logger("dashboard.api")
 
@@ -87,6 +88,9 @@ async def _run_pipeline_bg() -> None:
         log.error("dashboard.pipeline.error", error=str(exc))
     finally:
         _pipeline_running = False
+
+
+_scheduler = ContentScheduler()
 
 
 # ---------------------------------------------------------------------------
@@ -287,8 +291,14 @@ async def get_stats(user: str = Depends(get_current_user)) -> dict[str, Any]:
 
 @router.get("/schedule")
 async def get_schedule(user: str = Depends(get_current_user)) -> dict[str, Any]:
-    """Upcoming scheduled publishes."""
-    return {"items": [], "total": 0}
+    items = _scheduler.get_queue()
+    return {
+        "items": [
+            {"scheduled_at": item.scheduled_at.isoformat(), "title": item.article.title_ko, "score": item.score}
+            for item in items
+        ],
+        "queue_size": _scheduler.queue_size(),
+    }
 
 
 # ---------------------------------------------------------------------------
