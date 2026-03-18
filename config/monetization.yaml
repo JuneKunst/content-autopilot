@@ -1,0 +1,9 @@
+ads:
+  enabled: false
+  provider: "manual"
+  placement: "after_content"
+  html_placeholder: '<div class="ad-placeholder" style="border:1px dashed #ccc; padding:16px; margin:16px 0; text-align:center; color:#999;">광고 영역</div>'
+affiliate:
+  enabled: false
+  links: []
+  auto_insert: false

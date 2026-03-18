@@ -263,7 +263,17 @@ async def add_source(
 
 @router.get("/stats")
 async def get_stats(user: str = Depends(get_current_user)) -> dict[str, Any]:
-    """Aggregated statistics (token costs, publish counts)."""
+    """Aggregated statistics (token costs, publish counts, subscriber count)."""
+    from content_autopilot.publishers.ghost import GhostPublisher
+
+    # Get subscriber count from Ghost
+    try:
+        ghost_pub = GhostPublisher()
+        subscriber_count = await ghost_pub.get_members_count()
+    except Exception as e:
+        log.error("stats.ghost_members_error", error=str(e))
+        subscriber_count = 0
+
     return {
         "token_costs": {
             "total_tokens": 0,
@@ -281,6 +291,7 @@ async def get_stats(user: str = Depends(get_current_user)) -> dict[str, Any]:
             "successful": 0,
             "failed": 0,
         },
+        "subscriber_count": subscriber_count,
     }
 
 
@@ -356,3 +367,15 @@ async def dashboard_sources(request: Request, user: str = Depends(get_current_us
 async def dashboard_analytics(request: Request, user: str = Depends(get_current_user)):
     """Analytics and monitoring page."""
     return templates.TemplateResponse("analytics.html", {"request": request})
+
+
+@router.get("/dashboard/monetization", include_in_schema=False)
+async def dashboard_monetization(request: Request, user: str = Depends(get_current_user)):
+    """Monetization settings page."""
+    try:
+        import yaml
+        with open("config/monetization.yaml") as f:
+            config = yaml.safe_load(f) or {}
+    except Exception:
+        config = {}
+    return templates.TemplateResponse("analytics.html", {"request": request, "monetization": config})

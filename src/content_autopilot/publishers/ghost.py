@@ -61,6 +61,16 @@ class GhostPublisher:
                 f"{draft.source_attribution}</a></p>"
             )
 
+        # Inject ad placeholder if monetization is enabled
+        try:
+            import yaml
+            with open("config/monetization.yaml") as f:
+                mon = yaml.safe_load(f) or {}
+            if mon.get("ads", {}).get("enabled") and mon.get("ads", {}).get("html_placeholder"):
+                html_content += "\n" + mon["ads"]["html_placeholder"]
+        except Exception:
+            pass  # Monetization config optional
+
         # Build tags list
         tags = [{"name": tag} for tag in (draft.tags or [])]
 
