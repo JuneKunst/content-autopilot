@@ -1,0 +1,45 @@
+Task 6: AI Module Foundation (DeepSeek API Wrapper)
+====================================================
+Date: 2026-03-18
+
+## Files Created
+- src/content_autopilot/ai/client.py     — DeepSeek async client with retry + token tracking
+- src/content_autopilot/ai/prompts.py    — Jinja2-based prompt template loader
+- src/content_autopilot/ai/pipeline.py   — Protocol interfaces (AISummarizer, AIHumanizer)
+- src/content_autopilot/ai/__init__.py   — Module exports
+- tests/test_ai_client.py                — 12 tests, all passing
+
+## Import Verification
+$ python -c "from content_autopilot.ai.client import DeepSeekClient; from content_autopilot.ai.prompts import PromptLoader; print('OK')"
+OK
+
+## Test Results
+$ python -m pytest tests/test_ai_client.py -v
+============================= test session starts ==============================
+platform darwin -- Python 3.13.0, pytest-9.0.2, pluggy-1.6.0
+plugins: anyio-4.12.1, asyncio-1.3.0
+asyncio: mode=Mode.AUTO
+
+tests/test_ai_client.py::test_chat_returns_ai_response PASSED
+tests/test_ai_client.py::test_chat_with_system_prompt PASSED
+tests/test_ai_client.py::test_token_tracking_accumulates PASSED
+tests/test_ai_client.py::test_estimate_monthly_cost_zero_when_no_calls PASSED
+tests/test_ai_client.py::test_estimate_monthly_cost_calculation PASSED
+tests/test_ai_client.py::test_chat_raises_auth_error_on_401 PASSED
+tests/test_ai_client.py::test_chat_raises_server_error_on_500 PASSED
+tests/test_ai_client.py::test_chat_retries_on_rate_limit_then_succeeds PASSED
+tests/test_ai_client.py::test_prompt_loader_render_basic PASSED
+tests/test_ai_client.py::test_prompt_loader_render_missing_template_raises PASSED
+tests/test_ai_client.py::test_prompt_loader_load_summarize_prompt PASSED
+tests/test_ai_client.py::test_prompt_loader_load_humanize_prompt PASSED
+
+12 passed in 0.25s
+
+## Key Design Decisions
+- Retry via tenacity: stop_after_attempt(max_retries), wait_exponential(1,1,10)
+- Retries on: DeepSeekRateLimitError, DeepSeekServerError, httpx.TimeoutException
+- Auth errors (401) are NOT retried (fail fast)
+- Token accumulation via _total_tokens_used dict
+- Cost: $0.27/MTok input + $1.10/MTok output (DeepSeek V3)
+- PromptLoader uses Jinja2 FileSystemLoader from config/personas/prompts/
+- Pipeline protocols use typing.Protocol (structural subtyping, no inheritance required)
