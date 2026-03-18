@@ -1,0 +1,5 @@
+fetch_count: 30
+min_score: 10
+excluded_domains:
+  - "reddit.com"
+  - "twitter.com"
