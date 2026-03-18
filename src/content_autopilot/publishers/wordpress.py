@@ -33,7 +33,10 @@ class WordPressPublisher:
         """Convert ArticleDraft to WP REST API post payload."""
         html_content = markdown.markdown(draft.content_ko)
         if draft.source_attribution and draft.source_attribution not in html_content:
-            html_content += f'\n<p>출처: <a href="{draft.source_attribution}">{draft.source_attribution}</a></p>'
+            url = draft.source_attribution
+            html_content += (
+                f'\n<p>출처: <a href="{url}">{url}</a></p>'
+            )
 
         return {
             "title": draft.title_ko,

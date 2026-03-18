@@ -31,7 +31,10 @@ class TistoryPublisher:
         try:
             importlib.import_module("playwright.async_api")
         except ImportError:
-            return PublishResult(channel="tistory", status="skipped", error="playwright not installed")
+            return PublishResult(
+                channel="tistory", status="skipped",
+                error="playwright not installed",
+            )
 
         try:
             published_url = await self._post_via_browser(draft)
@@ -80,8 +83,9 @@ class TistoryPublisher:
 
             html_content = markdown.markdown(draft.content_ko)
             if draft.source_attribution:
+                url = draft.source_attribution
                 html_content += (
-                    f'<p>출처: <a href="{draft.source_attribution}">{draft.source_attribution}</a></p>'
+                    f'<p>출처: <a href="{url}">{url}</a></p>'
                 )
 
             try:
@@ -93,7 +97,8 @@ class TistoryPublisher:
                             cm.CodeMirror.setValue(content);
                             return;
                         }
-                        const editor = document.querySelector('[contenteditable="true"], .mce-content-body');
+                        const sel = '[contenteditable="true"], .mce-content-body';
+                        const editor = document.querySelector(sel);
                         if (editor) {
                             editor.innerHTML = content;
                         }
