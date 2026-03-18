@@ -1,0 +1,24 @@
+Task: 16 - AI Humanization (Persona-styled Rewriting)
+Date: 2026-03-18
+
+Changed files:
+- src/content_autopilot/processing/humanizer.py
+- tests/processing/test_humanizer.py
+
+Verification:
+1) LSP diagnostics (errors only)
+   - src/content_autopilot/processing/humanizer.py: No diagnostics found
+   - tests/processing/test_humanizer.py: No diagnostics found
+
+2) Test command
+   python -m pytest tests/processing/test_humanizer.py -v
+
+3) Test result
+   - collected 9 items
+   - 9 passed in 0.21s
+
+Checks confirmed:
+- ArticleDraft source_attribution matches source_url
+- source_url is preserved in content_ko
+- content_ko minimum length requirement (>= 300 chars) validated
+- No real API calls in tests (DeepSeek client fully mocked)
