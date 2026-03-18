@@ -26,7 +26,7 @@
     <div class="bg-gray-50 rounded p-4"><p class="text-xs text-gray-500">월 예상</p><p class="text-2xl font-bold">$0.00 <span class="text-xs text-gray-400">/ $50</span></p></div>
   </div>
 </div>
-<div class="bg-white rounded-lg shadow p-6">
+<div class="bg-white rounded-lg shadow p-6 mb-6">
   <h2 class="font-semibold mb-4">채널별 발행 현황</h2>
   <div class="grid grid-cols-3 gap-4">
     {% for ch in [("Ghost 블로그","👻"),("Telegram","✈️"),("Discord","🎮")] %}
@@ -37,6 +37,33 @@
     {% endfor %}
   </div>
 </div>
+<div class="bg-white rounded-lg shadow p-6">
+  <h2 class="font-semibold mb-4">구독자 현황</h2>
+  <div class="grid grid-cols-1 gap-4">
+    <div class="bg-gray-50 rounded p-4">
+      <p class="text-xs text-gray-500">Ghost 멤버십 구독자</p>
+      <p class="text-3xl font-bold" id="subscriber-count">0</p>
+    </div>
+  </div>
+</div>
 <p class="text-xs text-gray-400 mt-4 text-right">30초마다 자동 새로고침</p>
 </div>
+<script>
+async function updateSubscriberCount() {
+  try {
+    const response = await fetch('/api/stats');
+    if (response.ok) {
+      const data = await response.json();
+      const subscriberCount = document.getElementById('subscriber-count');
+      if (subscriberCount) {
+        subscriberCount.textContent = data.subscriber_count || 0;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch subscriber count:', error);
+  }
+}
+document.addEventListener('DOMContentLoaded', updateSubscriberCount);
+setInterval(updateSubscriberCount, 30000);
+</script>
 {% endblock %}

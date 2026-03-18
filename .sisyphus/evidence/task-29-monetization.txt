@@ -1,0 +1,44 @@
+TASK 29: Ad/Affiliate Infrastructure Placeholders
+================================================
+
+COMPLETED DELIVERABLES:
+✓ config/monetization.yaml created with ads and affiliate settings
+✓ src/content_autopilot/publishers/ghost.py extended with ad placeholder injection
+✓ src/content_autopilot/dashboard/api.py extended with /dashboard/monetization route
+✓ Monetization config verified to load correctly
+
+VERIFICATION RESULTS:
+✓ Ads enabled: False (opt-in by default)
+✓ Affiliate enabled: False (opt-in by default)
+✓ Ad provider: manual
+✓ Ad placement: after_content
+✓ HTML placeholder: <div class="ad-placeholder" style="border:1px dashed #ccc; padding:16px; margin:16px 0; text-align:center; color:#999;">광고 영역</div>
+
+IMPLEMENTATION DETAILS:
+
+1. config/monetization.yaml
+   - Ads section with enabled, provider, placement, html_placeholder
+   - Affiliate section with enabled, links, auto_insert
+   - Both disabled by default (opt-in)
+
+2. ghost.py _draft_to_post() modification
+   - Added try/except block to load monetization config
+   - Injects ad HTML after content if ads.enabled=true
+   - Graceful fallback if config missing (non-breaking)
+
+3. api.py /dashboard/monetization route
+   - New GET endpoint at /dashboard/monetization
+   - Loads monetization config and passes to template
+   - Reuses analytics.html template
+   - Protected by HTTP Basic Auth
+
+YAML VALIDATION:
+✓ config/monetization.yaml loads without errors
+✓ All required keys present
+✓ Structure matches specification
+
+NOTES:
+- No Google AdSense integration (placeholder only)
+- No payment processing implemented
+- No revenue tracking systems
+- All monetization features are opt-in (disabled by default)

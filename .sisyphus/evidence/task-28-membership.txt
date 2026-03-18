@@ -1,0 +1,102 @@
+TASK 28: Ghost Membership/Subscription System Implementation
+============================================================
+
+COMPLETED ITEMS:
+================
+
+1. ✅ Verified get_members_count() exists in GhostPublisher
+   - Location: src/content_autopilot/publishers/ghost.py (lines 111-125)
+   - Method: async def get_members_count(self) -> int
+   - Functionality: Fetches total members count from Ghost Admin API
+   - API Endpoint: GET /ghost/api/admin/members/?limit=1
+   - Returns: data.get("meta", {}).get("pagination", {}).get("total", 0)
+   - Error handling: Returns 0 on exception with error logging
+
+2. ✅ Updated GET /api/stats endpoint to include subscriber_count
+   - Location: src/content_autopilot/dashboard/api.py (lines 264-295)
+   - Added: Import GhostPublisher
+   - Added: Try/except block to fetch subscriber count
+   - Response includes: "subscriber_count": <int>
+   - Error handling: Logs error and returns 0 if Ghost API fails
+
+3. ✅ Updated analytics.html template with subscriber stats card
+   - Location: src/content_autopilot/dashboard/templates/analytics.html
+   - Added: New "구독자 현황" (Subscriber Status) section
+   - Display: Ghost 멤버십 구독자 count with large font
+   - Styling: Consistent with existing cards (bg-gray-50, rounded, p-4)
+   - Auto-refresh: Updates every 30 seconds via JavaScript
+
+4. ✅ Added JavaScript to fetch and display subscriber count
+   - Function: updateSubscriberCount()
+   - Trigger: On DOMContentLoaded and every 30 seconds
+   - Endpoint: /api/stats
+   - DOM Target: #subscriber-count element
+   - Error handling: Logs to console on fetch failure
+
+5. ✅ Verified .env.example already has required variables
+   - GHOST_URL: ✓ Present
+   - GHOST_ADMIN_KEY: ✓ Present
+   - No additional member-specific tokens needed
+
+VERIFICATION RESULTS:
+====================
+
+✅ Python syntax check: PASSED
+   - api.py compiles without errors
+   - GhostPublisher.get_members_count() method exists and is callable
+
+✅ Jinja2 template syntax: PASSED
+   - analytics.html loads successfully
+   - No template syntax errors
+
+✅ Method verification: PASSED
+   - get_members_count in dir(GhostPublisher()) → True
+
+IMPLEMENTATION DETAILS:
+======================
+
+Ghost Members API Integration:
+- Uses existing JWT authentication (_get_headers method)
+- Endpoint: /ghost/api/admin/members/?limit=1
+- Pagination metadata contains total member count
+- Graceful fallback to 0 on API errors
+
+Dashboard Stats Response Structure:
+{
+  "token_costs": {...},
+  "publish_counts": {...},
+  "pipeline_runs": {...},
+  "subscriber_count": <int>  ← NEW FIELD
+}
+
+Analytics Page Updates:
+- New card section: "구독자 현황" (Subscriber Status)
+- Real-time updates via fetch API
+- 30-second auto-refresh interval
+- Responsive grid layout
+
+TESTING NOTES:
+==============
+
+To test the implementation:
+1. Ensure Ghost CMS is running with valid GHOST_ADMIN_KEY
+2. Navigate to /dashboard/analytics
+3. Verify subscriber count displays (should be 0 if no members)
+4. Check browser console for any fetch errors
+5. Verify auto-refresh updates the count every 30 seconds
+
+DEPENDENCIES:
+==============
+
+- GhostPublisher class (already implemented in T17)
+- FastAPI async support (already in place)
+- HTMX for page refresh (already in base.html)
+- Tailwind CSS for styling (already in base.html)
+
+NO BREAKING CHANGES:
+====================
+
+- Existing /api/stats response is extended (backward compatible)
+- No changes to authentication or authorization
+- No changes to existing dashboard pages
+- No database migrations required
