@@ -1,0 +1,37 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.0, pytest-9.0.2, pluggy-1.6.0 -- /Users/june/.pyenv/versions/3.13.0/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/june/content-autopilot
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 26 items
+
+tests/publishers/test_ghost.py::TestMakeJwt::test_valid_key_returns_jwt_string PASSED [  3%]
+tests/publishers/test_ghost.py::TestMakeJwt::test_jwt_has_correct_claims PASSED [  7%]
+tests/publishers/test_ghost.py::TestMakeJwt::test_jwt_header_has_kid PASSED [ 11%]
+tests/publishers/test_ghost.py::TestMakeJwt::test_invalid_key_no_colon_raises_value_error PASSED [ 15%]
+tests/publishers/test_ghost.py::TestMakeJwt::test_empty_key_raises_value_error PASSED [ 19%]
+tests/publishers/test_ghost.py::TestMakeJwt::test_none_key_raises_value_error PASSED [ 23%]
+tests/publishers/test_ghost.py::TestDraftToPost::test_tags_converted_to_name_dicts PASSED [ 26%]
+tests/publishers/test_ghost.py::TestDraftToPost::test_empty_tags PASSED  [ 30%]
+tests/publishers/test_ghost.py::TestDraftToPost::test_source_attribution_added_to_html PASSED [ 34%]
+tests/publishers/test_ghost.py::TestDraftToPost::test_source_attribution_not_duplicated_if_already_present PASSED [ 38%]
+tests/publishers/test_ghost.py::TestDraftToPost::test_summary_ko_becomes_custom_excerpt PASSED [ 42%]
+tests/publishers/test_ghost.py::TestDraftToPost::test_summary_ko_truncated_to_300_chars PASSED [ 46%]
+tests/publishers/test_ghost.py::TestDraftToPost::test_markdown_converted_to_html PASSED [ 50%]
+tests/publishers/test_ghost.py::TestDraftToPost::test_status_is_published PASSED [ 53%]
+tests/publishers/test_ghost.py::TestDraftToPost::test_newsletter_fields_added_when_enabled PASSED [ 57%]
+tests/publishers/test_ghost.py::TestDraftToPost::test_newsletter_fields_absent_when_disabled PASSED [ 61%]
+tests/publishers/test_ghost.py::TestPublish::test_publish_success_returns_publish_result PASSED [ 65%]
+tests/publishers/test_ghost.py::TestPublish::test_publish_calls_correct_endpoint PASSED [ 69%]
+tests/publishers/test_ghost.py::TestPublish::test_publish_sends_correct_payload PASSED [ 73%]
+tests/publishers/test_ghost.py::TestPublish::test_publish_sends_ghost_auth_header PASSED [ 76%]
+tests/publishers/test_ghost.py::TestPublish::test_publish_http_401_returns_failed PASSED [ 80%]
+tests/publishers/test_ghost.py::TestPublish::test_publish_http_422_returns_failed PASSED [ 84%]
+tests/publishers/test_ghost.py::TestPublish::test_publish_network_error_returns_failed PASSED [ 88%]
+tests/publishers/test_ghost.py::TestPublish::test_publish_with_send_newsletter_flag PASSED [ 92%]
+tests/publishers/test_ghost.py::TestGetMembersCount::test_returns_total_count PASSED [ 96%]
+tests/publishers/test_ghost.py::TestGetMembersCount::test_returns_zero_on_error PASSED [100%]
+
+============================== 26 passed in 0.22s ==============================
