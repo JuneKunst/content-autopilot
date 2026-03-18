@@ -1,0 +1,16 @@
+weights:
+  volume: 0.3
+  velocity: 0.2
+  comment_ratio: 0.1
+  cross_platform: 0.2
+  source_authority: 0.1
+  time_decay: 0.1
+source_authority:
+  hn: 1.0
+  reddit: 0.8
+  github: 0.7
+  youtube: 0.6
+  rss: 0.5
+time_decay:
+  half_life_hours: 24
+top_n: 3
