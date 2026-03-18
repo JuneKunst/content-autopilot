@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     mastodon_instance: str = "https://mastodon.social"
     bluesky_identifier: str = ""
     bluesky_app_password: str = ""
+    wp_site_url: str = ""
+    wp_username: str = ""
+    wp_app_password: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

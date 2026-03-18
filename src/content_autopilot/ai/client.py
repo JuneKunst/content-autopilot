@@ -1,7 +1,6 @@
-"""DeepSeek async API client with retry and token tracking."""
-
 import time
 from dataclasses import dataclass
+from enum import Enum
 
 import httpx
 import structlog
@@ -16,46 +15,73 @@ from content_autopilot.config import settings
 
 log = structlog.get_logger()
 
-DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
-DEEPSEEK_MODEL = "deepseek-chat"
 
-# Pricing per million tokens (DeepSeek V3)
-_INPUT_COST_PER_MTOK = 0.27
-_OUTPUT_COST_PER_MTOK = 1.10
+class AIProvider(str, Enum):
+    OPENAI = "openai"
+    GEMINI = "gemini"
+    CLAUDE = "claude"
+
+
+PROVIDER_CONFIGS: dict[AIProvider, dict[str, str | float]] = {
+    AIProvider.OPENAI: {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "model": "gpt-4o-mini",
+        "input_cost": 0.15,
+        "output_cost": 0.60,
+    },
+    AIProvider.GEMINI: {
+        "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        "model": "gemini-2.0-flash-lite",
+        "input_cost": 0.075,
+        "output_cost": 0.30,
+    },
+    AIProvider.CLAUDE: {
+        "url": "https://api.anthropic.com/v1/messages",
+        "model": "claude-haiku-4-20250414",
+        "input_cost": 0.25,
+        "output_cost": 1.25,
+    },
+}
 
 
 @dataclass
 class AIResponse:
     content: str
-    usage: dict[str, int]  # {input_tokens, output_tokens, total_tokens}
+    usage: dict[str, int]
     model: str
+    provider: str
 
 
-class DeepSeekAuthError(Exception):
+class AIAuthError(Exception):
     """Raised on 401 authentication failure."""
 
 
-class DeepSeekRateLimitError(Exception):
+class AIRateLimitError(Exception):
     """Raised on 429 rate limit."""
 
 
-class DeepSeekServerError(Exception):
+class AIServerError(Exception):
     """Raised on 5xx server errors."""
 
 
-class DeepSeekClient:
-    """Async DeepSeek API client with retry and token tracking."""
+class AIClient:
 
     def __init__(
         self,
-        api_key: str | None = None,
+        primary: AIProvider = AIProvider.OPENAI,
+        fallbacks: list[AIProvider] | None = None,
         max_retries: int = 3,
-        timeout: float = 30.0,
+        timeout: float = 60.0,
     ) -> None:
-        self._api_key = api_key or settings.deepseek_api_key
+        self._providers = [primary] + (fallbacks or [])
         self.max_retries = max_retries
         self.timeout = timeout
-        self._total_tokens_used: dict[str, int] = {"input": 0, "output": 0}
+        self._total_tokens: dict[str, int] = {"input": 0, "output": 0}
+        self._api_keys = {
+            AIProvider.OPENAI: settings.openai_api_key,
+            AIProvider.GEMINI: settings.gemini_api_key,
+            AIProvider.CLAUDE: settings.claude_api_key,
+        }
 
     async def chat(
         self,
@@ -63,89 +89,204 @@ class DeepSeekClient:
         system_prompt: str = "",
         temperature: float = 0.7,
     ) -> AIResponse:
-        """Send a chat completion request to DeepSeek API."""
+        last_error: Exception | None = None
+
+        for provider in self._providers:
+            api_key = self._api_keys.get(provider, "")
+            if not api_key:
+                continue
+            try:
+                if provider == AIProvider.CLAUDE:
+                    return await self._call_claude(
+                        prompt,
+                        system_prompt,
+                        temperature,
+                        provider,
+                    )
+                return await self._call_openai_compat(
+                    prompt,
+                    system_prompt,
+                    temperature,
+                    provider,
+                )
+            except AIAuthError:
+                log.warning("ai_auth_error", provider=provider.value)
+                last_error = AIAuthError(f"{provider.value} auth failed")
+                continue
+            except (AIRateLimitError, AIServerError, httpx.TimeoutException) as e:
+                log.warning("ai_provider_error", provider=provider.value, error=str(e))
+                last_error = e
+                continue
+
+        raise last_error or RuntimeError("No AI provider available (check API keys)")
+
+    async def _call_openai_compat(
+        self,
+        prompt: str,
+        system_prompt: str,
+        temperature: float,
+        provider: AIProvider,
+    ) -> AIResponse:
+        config = PROVIDER_CONFIGS[provider]
+        api_key = self._api_keys[provider]
+
+        messages: list[dict[str, str]] = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        payload = {
+            "model": config["model"],
+            "messages": messages,
+            "temperature": temperature,
+        }
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
 
         @retry(
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential(multiplier=1, min=1, max=10),
             retry=retry_if_exception_type(
-                (DeepSeekRateLimitError, DeepSeekServerError, httpx.TimeoutException)
+                (AIRateLimitError, AIServerError, httpx.TimeoutException)
             ),
             reraise=True,
         )
         async def _call() -> AIResponse:
-            messages = []
-            if system_prompt:
-                messages.append({"role": "system", "content": system_prompt})
-            messages.append({"role": "user", "content": prompt})
-
-            payload = {
-                "model": DEEPSEEK_MODEL,
-                "messages": messages,
-                "temperature": temperature,
-            }
-
-            headers = {
-                "Authorization": f"Bearer {self._api_key}",
-                "Content-Type": "application/json",
-            }
-
             start = time.monotonic()
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(
-                    DEEPSEEK_API_URL,
-                    json=payload,
-                    headers=headers,
-                )
-
+                resp = await client.post(config["url"], json=payload, headers=headers)
             duration = time.monotonic() - start
 
-            if response.status_code == 401:
-                raise DeepSeekAuthError("DeepSeek API authentication failed (401)")
-            if response.status_code == 429:
-                raise DeepSeekRateLimitError("DeepSeek rate limit exceeded (429)")
-            if response.status_code >= 500:
-                raise DeepSeekServerError(
-                    f"DeepSeek server error ({response.status_code})"
-                )
+            if resp.status_code == 401:
+                raise AIAuthError(f"{provider.value} auth failed")
+            if resp.status_code == 429:
+                raise AIRateLimitError(f"{provider.value} rate limited")
+            if resp.status_code >= 500:
+                raise AIServerError(f"{provider.value} server error {resp.status_code}")
+            resp.raise_for_status()
 
-            response.raise_for_status()
-            data = response.json()
-
-            choice = data["choices"][0]["message"]["content"]
+            data = resp.json()
+            content = data["choices"][0]["message"]["content"]
             raw_usage = data.get("usage", {})
             usage = {
                 "input_tokens": raw_usage.get("prompt_tokens", 0),
                 "output_tokens": raw_usage.get("completion_tokens", 0),
                 "total_tokens": raw_usage.get("total_tokens", 0),
             }
-            model = data.get("model", DEEPSEEK_MODEL)
 
-            # Accumulate token usage
-            self._total_tokens_used["input"] += usage["input_tokens"]
-            self._total_tokens_used["output"] += usage["output_tokens"]
+            self._total_tokens["input"] += usage["input_tokens"]
+            self._total_tokens["output"] += usage["output_tokens"]
 
+            model = str(config["model"])
             log.info(
-                "deepseek_api_call",
+                "ai_api_call",
+                provider=provider.value,
                 model=model,
                 input_tokens=usage["input_tokens"],
                 output_tokens=usage["output_tokens"],
                 duration_s=round(duration, 3),
             )
+            return AIResponse(
+                content=content,
+                usage=usage,
+                model=model,
+                provider=provider.value,
+            )
 
-            return AIResponse(content=choice, usage=usage, model=model)
+        return await _call()
+
+    async def _call_claude(
+        self,
+        prompt: str,
+        system_prompt: str,
+        temperature: float,
+        provider: AIProvider,
+    ) -> AIResponse:
+        config = PROVIDER_CONFIGS[provider]
+        api_key = self._api_keys[provider]
+
+        payload: dict[str, str | float | int | list[dict[str, str]]] = {
+            "model": str(config["model"]),
+            "max_tokens": 4096,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": temperature,
+        }
+        if system_prompt:
+            payload["system"] = system_prompt
+
+        headers = {
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+        }
+
+        @retry(
+            stop=stop_after_attempt(self.max_retries),
+            wait=wait_exponential(multiplier=1, min=1, max=10),
+            retry=retry_if_exception_type(
+                (AIRateLimitError, AIServerError, httpx.TimeoutException)
+            ),
+            reraise=True,
+        )
+        async def _call() -> AIResponse:
+            start = time.monotonic()
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                resp = await client.post(config["url"], json=payload, headers=headers)
+            duration = time.monotonic() - start
+
+            if resp.status_code == 401:
+                raise AIAuthError("Claude auth failed")
+            if resp.status_code == 429:
+                raise AIRateLimitError("Claude rate limited")
+            if resp.status_code >= 500:
+                raise AIServerError(f"Claude server error {resp.status_code}")
+            resp.raise_for_status()
+
+            data = resp.json()
+            content = data["content"][0]["text"]
+            raw_usage = data.get("usage", {})
+            usage = {
+                "input_tokens": raw_usage.get("input_tokens", 0),
+                "output_tokens": raw_usage.get("output_tokens", 0),
+                "total_tokens": raw_usage.get("input_tokens", 0)
+                + raw_usage.get("output_tokens", 0),
+            }
+
+            self._total_tokens["input"] += usage["input_tokens"]
+            self._total_tokens["output"] += usage["output_tokens"]
+
+            model = str(config["model"])
+            log.info(
+                "ai_api_call",
+                provider=provider.value,
+                model=model,
+                input_tokens=usage["input_tokens"],
+                output_tokens=usage["output_tokens"],
+                duration_s=round(duration, 3),
+            )
+            return AIResponse(
+                content=content,
+                usage=usage,
+                model=model,
+                provider=provider.value,
+            )
 
         return await _call()
 
     @property
     def total_tokens_used(self) -> dict[str, int]:
-        return dict(self._total_tokens_used)
+        return dict(self._total_tokens)
 
-    def estimate_monthly_cost(self) -> float:
-        """Estimate cost in USD based on accumulated token usage.
-
-        DeepSeek V3: $0.27/MTok input, $1.10/MTok output.
-        """
-        input_cost = (self._total_tokens_used["input"] / 1_000_000) * _INPUT_COST_PER_MTOK
-        output_cost = (self._total_tokens_used["output"] / 1_000_000) * _OUTPUT_COST_PER_MTOK
+    def estimate_monthly_cost(self, provider: AIProvider = AIProvider.OPENAI) -> float:
+        config = PROVIDER_CONFIGS[provider]
+        input_cost = (self._total_tokens["input"] / 1_000_000) * float(config["input_cost"])
+        output_cost = (self._total_tokens["output"] / 1_000_000) * float(config["output_cost"])
         return round(input_cost + output_cost, 6)
+
+
+DeepSeekClient = AIClient
+DeepSeekAuthError = AIAuthError
+DeepSeekRateLimitError = AIRateLimitError
+DeepSeekServerError = AIServerError
