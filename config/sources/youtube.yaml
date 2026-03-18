@@ -1,0 +1,7 @@
+search_queries:
+  - "AI technology 2024"
+  - "programming tutorial"
+  - "tech news"
+region: KR
+max_results: 10
+daily_quota_limit: 9500

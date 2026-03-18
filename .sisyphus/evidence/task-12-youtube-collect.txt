@@ -1,0 +1,47 @@
+Task 12: YouTube Collector Implementation
+==========================================
+Date: 2026-03-18
+
+## Files Created
+- src/content_autopilot/collectors/youtube.py
+- config/sources/youtube.yaml
+- tests/collectors/test_youtube.py
+
+## Import Verification
+$ python -c "from content_autopilot.collectors.youtube import YouTubeCollector; print('OK')"
+OK
+
+## Test Results
+$ python -m pytest tests/collectors/test_youtube.py -v
+
+============================= test session starts ==============================
+platform darwin -- Python 3.13.0, pytest-9.0.2, pluggy-1.6.0
+asyncio: mode=Mode.AUTO
+
+collected 14 items
+
+tests/collectors/test_youtube.py::test_collect_returns_empty_when_no_api_key PASSED
+tests/collectors/test_youtube.py::test_collect_returns_raw_items_with_api_key PASSED
+tests/collectors/test_youtube.py::test_collect_deduplicates_same_video_id PASSED
+tests/collectors/test_youtube.py::test_collect_respects_limit PASSED
+tests/collectors/test_youtube.py::test_get_most_popular_returns_raw_items_with_views PASSED
+tests/collectors/test_youtube.py::test_get_most_popular_returns_empty_on_api_error PASSED
+tests/collectors/test_youtube.py::test_video_to_raw_item_maps_stats_correctly PASSED
+tests/collectors/test_youtube.py::test_video_to_raw_item_handles_none_stats PASSED
+tests/collectors/test_youtube.py::test_video_to_raw_item_truncates_description PASSED
+tests/collectors/test_youtube.py::test_search_result_to_raw_item_maps_correctly PASSED
+tests/collectors/test_youtube.py::test_quota_increments_after_most_popular PASSED
+tests/collectors/test_youtube.py::test_quota_increments_after_search PASSED
+tests/collectors/test_youtube.py::test_quota_remaining_decreases_as_quota_used_increases PASSED
+tests/collectors/test_youtube.py::test_collect_skips_search_when_quota_low PASSED
+
+======================= 14 passed, 31 warnings in 0.16s ========================
+
+## Implementation Notes
+- YouTubeCollector uses YouTube Data API v3
+- Quota tracking: SEARCH_QUOTA_COST=100, VIDEOS_QUOTA_COST=1
+- Daily quota limit: 9500 (buffer from 10000 free tier)
+- Two strategies: mostPopular (regionCode=KR) + search by query
+- Graceful empty return when youtube_api_key is not set
+- Deduplication by external_id (youtube_{video_id})
+- RateLimiter: 30 requests/minute
