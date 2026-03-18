@@ -31,19 +31,19 @@
 
 | 단계 | 설명 |
 |------|------|
-| **수집** | HN, Reddit, GitHub, RSS, YouTube에서 기술 콘텐츠 자동 수집 |
+| **수집** | HN, GitHub, RSS, YouTube에서 기술 콘텐츠 자동 수집 |
 | **중복 제거** | URL 정규화 + 제목 유사도 비교로 크로스플랫폼 중복 제거 |
 | **스코어링** | 업보트, 속도, 댓글 비율, 소스 권위도 등 6개 시그널 가중 점수 |
-| **AI 요약** | DeepSeek API로 영문 콘텐츠 → 한국어 요약 + 핵심 포인트 추출 |
+| **AI 요약** | OpenAI GPT-4o-mini로 영문 콘텐츠 → 한국어 요약 + 핵심 포인트 추출 (Gemini/Claude fallback) |
 | **스타일링** | 페르소나 설정 기반 한국어 블로그 포스트로 변환 |
-| **발행** | Ghost 블로그, Telegram, Discord, Mastodon, Bluesky 동시 발행 |
+| **발행** | Ghost, WordPress, 네이버 블로그, 티스토리, Telegram, Discord, Mastodon, Bluesky 동시 발행 |
 
 ### 기술 스택
 
 | 컴포넌트 | 기술 |
 |----------|------|
 | 백엔드 | Python 3.12, FastAPI, SQLAlchemy 2.0 async |
-| AI | DeepSeek V3 API ($0.27/MTok) |
+| AI | OpenAI GPT-4o-mini ($0.15/MTok) + Gemini Flash + Claude Haiku fallback |
 | CMS | Ghost 5 (SQLite) |
 | DB | PostgreSQL 15 |
 | 프론트엔드 | htmx + Tailwind CSS (빌드 불필요) |
@@ -140,13 +140,25 @@ uvicorn content_autopilot.app:app --host 0.0.0.0 --port 8000 --reload
 
 ## 4. API 키 발급 가이드
 
-### 필수: DeepSeek API 키
+### 필수: OpenAI API 키
 
-1. https://platform.deepseek.com/ 가입
+1. https://platform.openai.com/ 가입
 2. API Keys 메뉴에서 키 생성
-3. `.env`의 `DEEPSEEK_API_KEY`에 입력
+3. `.env`의 `OPENAI_API_KEY`에 입력
 
-> DeepSeek V3는 $0.27/MTok input, $1.10/MTok output으로 GPT-4 대비 1/100 가격
+> GPT-4o-mini: $0.15/MTok input, $0.60/MTok output — 가장 가성비 좋은 모델
+
+### 선택: Google Gemini API 키 (fallback 1)
+
+1. https://aistudio.google.com/ 접속
+2. Get API Key → Create API Key
+3. `.env`의 `GEMINI_API_KEY`에 입력
+
+### 선택: Anthropic Claude API 키 (fallback 2)
+
+1. https://console.anthropic.com/ 가입
+2. API Keys 메뉴에서 키 생성
+3. `.env`의 `CLAUDE_API_KEY`에 입력
 
 ### 필수: Ghost Admin API 키
 
@@ -213,22 +225,35 @@ uvicorn content_autopilot.app:app --host 0.0.0.0 --port 8000 --reload
 `.env` 파일 전체 구조:
 
 ```bash
-# === 필수 ===
-DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxx
+# === 필수: AI API ===
+OPENAI_API_KEY=sk-xxxx                # 메인 AI (GPT-4o-mini)
+GEMINI_API_KEY=xxxx                   # fallback 1 (Gemini Flash)
+CLAUDE_API_KEY=sk-ant-xxxx            # fallback 2 (Claude Haiku)
+
+# === 필수: 인프라 ===
 GHOST_URL=http://localhost:2368
-GHOST_ADMIN_KEY=aabbccddee1234567890abcd:aabbccddee1234567890abcdaabbccddee1234567890abcdaabbccddee1234567890abcd
-GHOST_CONTENT_KEY=xxxxxxxxxxxxxxxxxxxx
+GHOST_ADMIN_KEY=id:secret
+GHOST_CONTENT_KEY=xxxx
 DB_URL=postgresql+asyncpg://autopilot:autopilot@localhost:5432/content_autopilot
 DASHBOARD_PASSWORD=your_strong_password_here
 
-# === 발행 채널 (선택) ===
+# === 블로그 발행 (선택) ===
+WP_SITE_URL=https://your-wordpress-site.com
+WP_USERNAME=admin
+WP_APP_PASSWORD=xxxx xxxx xxxx xxxx xxxx xxxx
+NAVER_ID=your_naver_id
+NAVER_PASSWORD=your_naver_password
+NAVER_BLOG_ID=your_blog_id
+TISTORY_EMAIL=your_kakao_email
+TISTORY_PASSWORD=your_kakao_password
+TISTORY_BLOG_NAME=your_tistory_blog_name
+
+# === 메시징 채널 (선택) ===
 TG_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 TG_CHANNEL_ID=@my_tech_channel
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/1234/abcdef
 
 # === 수집 소스 (선택) ===
-REDDIT_CLIENT_ID=ABCdef123456
-REDDIT_CLIENT_SECRET=xyzABC789
 GITHUB_TOKEN=ghp_xxxxxxxxxxxx
 YOUTUBE_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxx
 
@@ -244,16 +269,18 @@ BLUESKY_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx
 
 ### 최소 구성 (필수만)
 
-API 키가 없는 수집 소스는 자동 스킵됩니다. 최소한 이것만 설정하면 동작합니다:
+API 키가 없는 수집 소스/발행 채널은 자동 스킵됩니다. 최소한 이것만 설정하면 동작합니다:
 
 ```bash
-DEEPSEEK_API_KEY=sk-xxxx          # AI 처리용
+OPENAI_API_KEY=sk-xxxx             # AI 처리용 (필수)
 GHOST_URL=http://localhost:2368    # 블로그 발행용
 GHOST_ADMIN_KEY=id:secret          # Ghost API 인증
 DASHBOARD_PASSWORD=your_password   # 대시보드 로그인
 ```
 
-이 경우 HN + RSS만 수집합니다 (API 키 불필요한 소스).
+이 경우 HN + RSS만 수집하고 Ghost에만 발행합니다.
+Gemini/Claude 키 추가 시 AI fallback 체인 활성화.
+WordPress/네이버/티스토리 키 추가 시 해당 채널 자동 활성화.
 
 ---
 
