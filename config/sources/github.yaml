@@ -1,0 +1,10 @@
+min_stars: 50
+languages:
+  - python
+  - typescript
+  - go
+  - rust
+  - ""  # any language
+topics:
+  - ai
+  - machine-learning
