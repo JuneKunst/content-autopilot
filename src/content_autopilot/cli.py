@@ -1,5 +1,6 @@
-import typer
 import asyncio
+
+import typer
 
 from content_autopilot.orchestrator.pipeline import Pipeline
 from content_autopilot.orchestrator.scheduler import PipelineScheduler
@@ -9,7 +10,9 @@ app = typer.Typer(help="Content Autopilot CLI")
 
 @app.command()
 def run_pipeline(
-    dry_run: bool = typer.Option(False, "--dry-run", help="Run in dry-run mode without side effects")
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Run in dry-run mode without side effects"
+    )
 ) -> None:
     pipeline = Pipeline(dry_run=dry_run)
     result = asyncio.run(pipeline.run())

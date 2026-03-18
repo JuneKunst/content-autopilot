@@ -1,11 +1,14 @@
 """YouTube Data API v3 collector."""
-import httpx
 from datetime import datetime, timedelta, timezone
-from content_autopilot.schemas import RawItem
+
+import httpx
+
+from content_autopilot.common.http_client import create_client
 from content_autopilot.common.logger import get_logger
 from content_autopilot.common.rate_limiter import RateLimiter
-from content_autopilot.common.http_client import create_client
+from content_autopilot.common.retry import with_retry
 from content_autopilot.config import settings
+from content_autopilot.schemas import RawItem
 
 log = get_logger("collectors.youtube")
 YOUTUBE_API_URL = "https://www.googleapis.com/youtube/v3"
@@ -16,7 +19,12 @@ VIDEOS_QUOTA_COST = 1     # videos.list costs 1 unit per video
 
 class YouTubeCollector:
     def __init__(self, search_queries: list[str] | None = None):
-        self.search_queries = search_queries or ["AI technology 2024", "programming tutorial", "tech news"]
+        default_queries = [
+            "AI technology 2024",
+            "programming tutorial",
+            "tech news",
+        ]
+        self.search_queries = search_queries or default_queries
         self._api_key = settings.youtube_api_key
         self.quota_used = 0
         self.quota_limit = DAILY_QUOTA_LIMIT
@@ -58,7 +66,10 @@ class YouTubeCollector:
                     unique_items.append(item)
             return unique_items[:limit]
 
-    async def _get_most_popular(self, client: httpx.AsyncClient, max_results: int = 5) -> list[RawItem]:
+    @with_retry(max_attempts=3)
+    async def _get_most_popular(
+        self, client: httpx.AsyncClient, max_results: int = 5
+    ) -> list[RawItem]:
         """Get most popular videos in Korea."""
         await self._rate_limiter.acquire()
         resp = await client.get(
@@ -77,9 +88,14 @@ class YouTubeCollector:
         self.quota_used += VIDEOS_QUOTA_COST * max_results
         return [self._video_to_raw_item(v) for v in resp.json().get("items", [])]
 
-    async def _search_videos(self, client, query: str, max_results: int = 5) -> list[RawItem]:
+    @with_retry(max_attempts=3)
+    async def _search_videos(
+        self, client, query: str, max_results: int = 5
+    ) -> list[RawItem]:
         """Search for videos by query."""
-        yesterday = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        yesterday = (
+            datetime.now(timezone.utc) - timedelta(hours=24)
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
         resp = await client.get(
             f"{YOUTUBE_API_URL}/search",
             params={

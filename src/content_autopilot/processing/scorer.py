@@ -1,6 +1,6 @@
 import math
-from datetime import datetime, timezone
 from collections.abc import Mapping
+from datetime import datetime, timezone
 
 from content_autopilot.common.config_loader import load_yaml_config
 from content_autopilot.schemas import RawItem, ScoredItem

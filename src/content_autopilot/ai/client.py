@@ -1,7 +1,7 @@
 """DeepSeek async API client with retry and token tracking."""
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import httpx
 import structlog

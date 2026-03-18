@@ -1,11 +1,12 @@
 """GitHub trending repositories collector."""
-from datetime import datetime, timedelta
-import httpx
-from content_autopilot.schemas import RawItem
+from datetime import datetime, timedelta, timezone
+
+from content_autopilot.common.http_client import create_client
 from content_autopilot.common.logger import get_logger
 from content_autopilot.common.rate_limiter import RateLimiter
-from content_autopilot.common.http_client import create_client
+from content_autopilot.common.retry import with_retry
 from content_autopilot.config import settings
+from content_autopilot.schemas import RawItem
 
 log = get_logger("collectors.github")
 GITHUB_API_URL = "https://api.github.com"
@@ -21,7 +22,7 @@ class GitHubCollector:
 
     async def collect(self, limit: int = 20) -> list[RawItem]:
         """Collect trending GitHub repos from last 24 hours."""
-        yesterday = (datetime.utcnow() - timedelta(hours=24)).strftime("%Y-%m-%d")
+        yesterday = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%d")
         headers = {"Accept": "application/vnd.github.v3+json"}
         if self._token:
             headers["Authorization"] = f"token {self._token}"
@@ -37,7 +38,10 @@ class GitHubCollector:
                     log.warning("github_search_error", language=language, error=str(e))
             return items[:limit]
 
-    async def _search_repos(self, client, since_date: str, language: str, limit: int) -> list[RawItem]:
+    @with_retry(max_attempts=3)
+    async def _search_repos(
+        self, client, since_date: str, language: str, limit: int
+    ) -> list[RawItem]:
         query = f"created:>{since_date} stars:>{self.min_stars}"
         if language:
             query += f" language:{language}"
@@ -54,12 +58,14 @@ class GitHubCollector:
 
     def _to_raw_item(self, repo: dict) -> RawItem:
         description = repo.get("description") or ""
+        upvotes = repo.get("stargazers_count", 0)
+        comments = repo.get("open_issues_count", 0)
         return RawItem(
             source="github",
             title=f"{repo['full_name']}: {description or 'No description'}",
             url=repo["html_url"],
             content_preview=description[:500],
-            engagement={"upvotes": repo.get("stargazers_count", 0), "comments": repo.get("open_issues_count", 0)},
+            engagement={"upvotes": upvotes, "comments": comments},
             metadata={
                 "language": repo.get("language", ""),
                 "topics": repo.get("topics", []),

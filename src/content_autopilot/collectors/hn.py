@@ -1,10 +1,13 @@
 """HN (Hacker News) collector using Firebase API."""
 import asyncio
+
 import httpx
-from content_autopilot.schemas import RawItem
+
+from content_autopilot.common.http_client import create_client
 from content_autopilot.common.logger import get_logger
 from content_autopilot.common.rate_limiter import RateLimiter
-from content_autopilot.common.http_client import create_client
+from content_autopilot.common.retry import with_retry
+from content_autopilot.schemas import RawItem
 
 HN_BASE_URL = "https://hacker-news.firebaseio.com/v0"
 log = get_logger("collectors.hn")
@@ -27,6 +30,7 @@ class HNCollector:
             # 3. Filter and convert to RawItem
             return [self._to_raw_item(item) for item in items if self._is_valid(item)]
 
+    @with_retry(max_attempts=3)
     async def _fetch_story_ids(self, client: httpx.AsyncClient) -> list[int]:
         resp = await client.get(f"{HN_BASE_URL}/topstories.json")
         resp.raise_for_status()
@@ -35,6 +39,7 @@ class HNCollector:
     async def _fetch_items_parallel(self, client: httpx.AsyncClient, ids: list[int]) -> list[dict]:
         semaphore = asyncio.Semaphore(10)  # max 10 concurrent
 
+        @with_retry(max_attempts=3)
         async def fetch_one(id: int) -> dict | None:
             async with semaphore:
                 await self._rate_limiter.acquire()

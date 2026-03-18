@@ -7,8 +7,7 @@ from typing import Protocol
 
 import yaml
 
-from content_autopilot.ai.client import AIResponse
-from content_autopilot.ai.client import DeepSeekClient
+from content_autopilot.ai.client import AIResponse, DeepSeekClient
 from content_autopilot.common.logger import get_logger
 from content_autopilot.schemas import ArticleDraft, SummaryResult
 
@@ -205,8 +204,9 @@ JSON 형식으로 반환:
     def _check_quality(self, draft: ArticleDraft, persona: dict[str, object]) -> list[str]:
         issues: list[str] = []
         if len(draft.content_ko) < MIN_CONTENT_LENGTH:
+            content_len = len(draft.content_ko)
             issues.append(
-                f"본문이 너무 짧습니다 ({len(draft.content_ko)}자, 최소 {MIN_CONTENT_LENGTH}자 필요)"
+                f"본문이 너무 짧습니다 ({content_len}자, 최소 {MIN_CONTENT_LENGTH}자 필요)"
             )
         if draft.source_attribution not in draft.content_ko:
             issues.append("출처 링크가 본문에 없습니다")

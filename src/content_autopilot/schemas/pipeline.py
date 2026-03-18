@@ -1,7 +1,8 @@
 """Data models for pipeline status and orchestration."""
 
 from datetime import datetime
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
 
 
 class PipelineStatus(BaseModel):

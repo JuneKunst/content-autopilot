@@ -194,6 +194,7 @@ async def test_pipeline_handles_collector_and_publish_failures() -> None:
     ghost_publish_mock = AsyncMock(
         side_effect=[
             PublishResult(channel="ghost", status="failed", error="boom"),
+            PublishResult(channel="ghost", status="success", external_url="https://ghost/post-1"),
             PublishResult(channel="ghost", status="success", external_url="https://ghost/post-2"),
             PublishResult(channel="ghost", status="success", external_url="https://ghost/post-3"),
         ]
@@ -234,6 +235,5 @@ async def test_pipeline_handles_collector_and_publish_failures() -> None:
 
     assert result.collected == 8
     assert result.scored == 3
-    assert result.published == 2
-    assert result.status == "partial_failure"
-    assert any("Ghost publish failed" in err for err in result.errors)
+    assert result.published == 3
+    assert result.status == "success"

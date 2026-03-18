@@ -1,10 +1,11 @@
 """Telegram Bot publisher for channel posting."""
 import httpx
+
+from content_autopilot.common.http_client import create_client
+from content_autopilot.common.logger import get_logger
+from content_autopilot.config import settings
 from content_autopilot.schemas.ai import ArticleDraft
 from content_autopilot.schemas.publishing import PublishResult
-from content_autopilot.config import settings
-from content_autopilot.common.logger import get_logger
-from content_autopilot.common.http_client import create_client
 
 log = get_logger("publishers.telegram")
 
@@ -25,7 +26,10 @@ class TelegramPublisher:
         ]
         if ghost_url:
             msg_parts.append(f'🔗 <a href="{ghost_url}">전체 읽기</a>')
-        msg_parts.append(f'📌 출처: <a href="{draft.source_attribution}">{draft.source_attribution}</a>')
+        source_url = draft.source_attribution
+        msg_parts.append(
+            f'📌 출처: <a href="{source_url}">{source_url}</a>'
+        )
 
         if draft.tags:
             hashtags = " ".join(f"#{tag.replace(' ', '_')}" for tag in draft.tags[:5])

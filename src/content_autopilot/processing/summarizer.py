@@ -57,28 +57,31 @@ class Summarizer:
     async def _summarize_and_translate(
         self, content: str, title: str
     ) -> tuple[str, list[str], dict[str, int]]:
-        extract_prompt = f"""Extract 3-5 key points from this content. Be concise (1-2 sentences per point).
-Focus on: what happened, why it matters, technical impact.
-
-Title: {title}
-Content: {content}
-
-Return JSON format:
-{{"summary": "2-3 sentence summary", "key_points": ["point1", "point2", ...]}}"""
+        extract_prompt = (
+            "Extract 3-5 key points from this content. "
+            "Be concise (1-2 sentences per point).\n"
+            "Focus on: what happened, why it matters, technical impact.\n\n"
+            f"Title: {title}\n"
+            f"Content: {content}\n\n"
+            "Return JSON format:\n"
+            '{"summary": "2-3 sentence summary", "key_points": ["point1", "point2", ...]}'
+        )
 
         response = await self._client.chat(extract_prompt, temperature=0.3)
         extracted = self._parse_json_response(response.content)
         summary_en = self._string_or_default(extracted.get("summary"), content[:200])
         key_points_en = self._string_list_or_default(extracted.get("key_points"), [])
 
-        translate_prompt = f"""Translate to natural Korean. Not literal - use conversational Korean tone.
-
-Summary: {summary_en}
-Key points:
-{chr(10).join(f'- {point}' for point in key_points_en)}
-
-Return JSON:
-{{"summary_ko": "한국어 요약", "key_points_ko": ["포인트1", "포인트2", ...]}}"""
+        key_points_str = "\n".join(f"- {point}" for point in key_points_en)
+        translate_prompt = (
+            "Translate to natural Korean. "
+            "Not literal - use conversational Korean tone.\n\n"
+            f"Summary: {summary_en}\n"
+            "Key points:\n"
+            f"{key_points_str}\n\n"
+            "Return JSON:\n"
+            '{"summary_ko": "한국어 요약", "key_points_ko": ["포인트1", "포인트2", ...]}'
+        )
 
         translate_response = await self._client.chat(translate_prompt, temperature=0.3)
         translated = self._parse_json_response(translate_response.content)
@@ -150,8 +153,12 @@ JSON 형식으로 반환:
                 try:
                     parsed = json.loads(match.group())
                     return parsed if isinstance(parsed, dict) else {}
-                except json.JSONDecodeError:
-                    pass
+                except json.JSONDecodeError as e:
+                    log.debug(
+                        "summarizer_json_extraction_failed",
+                        error=str(e),
+                        preview=cleaned[:100],
+                    )
 
         log.warning("summarizer_invalid_json_response", preview=cleaned[:200])
         return {}

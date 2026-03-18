@@ -1,10 +1,11 @@
 """Content deduplication service using URL hash + title similarity."""
+import re
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from urllib.parse import urlparse, urlunparse
-import re
-from content_autopilot.schemas import RawItem
+
 from content_autopilot.common.logger import get_logger
+from content_autopilot.schemas import RawItem
 
 log = get_logger("processing.dedup")
 
@@ -21,7 +22,7 @@ class DedupService:
         self.title_threshold = title_threshold
 
     def normalize_url(self, url: str) -> str:
-        """Normalize URL: lowercase scheme/host, remove www, remove trailing slash, strip common query params."""
+        """Normalize URL: lowercase scheme/host, remove www, remove trailing slash."""
         try:
             parsed = urlparse(url.lower().strip())
             host = parsed.netloc.replace("www.", "")
@@ -63,7 +64,11 @@ class DedupService:
             norm_url = self.normalize_url(item.url)
             if norm_url in url_map:
                 j = url_map[norm_url]
-                result = DedupResult(is_duplicate=True, duplicate_of_id=items[j].external_id, similarity_score=1.0)
+                result = DedupResult(
+                    is_duplicate=True,
+                    duplicate_of_id=items[j].external_id,
+                    similarity_score=1.0,
+                )
                 duplicates.append((i, j, result))
                 continue
             url_map[norm_url] = i

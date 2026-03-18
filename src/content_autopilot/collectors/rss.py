@@ -2,10 +2,13 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
+
 import feedparser
-from content_autopilot.schemas import RawItem
+
 from content_autopilot.common.logger import get_logger
+from content_autopilot.common.rate_limiter import RateLimiter
 from content_autopilot.common.text_utils import strip_html, truncate
+from content_autopilot.schemas import RawItem
 
 log = get_logger("collectors.rss")
 
@@ -21,6 +24,7 @@ class RSSCollector:
     def __init__(self, feeds: list[dict] | None = None, max_age_hours: int = 24):
         self.feeds = feeds or DEFAULT_FEEDS
         self.max_age_hours = max_age_hours
+        self._rate_limiter = RateLimiter(requests_per_minute=30)
 
     async def collect(self, limit: int = 20) -> list[RawItem]:
         """Collect recent RSS entries from all configured feeds."""
@@ -28,6 +32,8 @@ class RSSCollector:
         all_items = []
         for feed_config in self.feeds:
             try:
+                # Apply rate limiting before fetching
+                await self._rate_limiter.acquire()
                 # feedparser is sync, run in thread pool
                 items = await loop.run_in_executor(None, self._fetch_feed, feed_config)
                 all_items.extend(items)
@@ -57,9 +63,11 @@ class RSSCollector:
         for field in ("published", "updated"):
             if hasattr(entry, field):
                 try:
-                    return parsedate_to_datetime(getattr(entry, field)).replace(tzinfo=timezone.utc)
-                except Exception:
-                    pass
+                    return parsedate_to_datetime(getattr(entry, field)).replace(
+                        tzinfo=timezone.utc
+                    )
+                except Exception as e:
+                    log.debug("rss_date_parse_failed", field=field, error=str(e))
         return None
 
     def _entry_to_raw_item(self, entry, feed_config: dict) -> RawItem | None:

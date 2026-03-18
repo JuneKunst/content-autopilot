@@ -1,7 +1,9 @@
 """Data models for publishing operations."""
 
 from datetime import datetime
+
 from pydantic import BaseModel
+
 from .ai import ArticleDraft
 
 

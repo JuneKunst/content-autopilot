@@ -1,6 +1,7 @@
 """Data models for content items (raw and scored)."""
 
-from datetime import datetime
+from datetime import datetime, timezone
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -13,7 +14,9 @@ class RawItem(BaseModel):
     content_preview: str = ""
     engagement: dict[str, int] = {}  # {upvotes, comments, views}
     metadata: dict = {}
-    collected_at: datetime = Field(default_factory=datetime.utcnow)
+    collected_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
     external_id: str = ""  # ID from source system
     source_lang: str = "en"  # "en" or "ko"
 

@@ -28,4 +28,7 @@ class Article(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<Article(id={self.id}, scored_item_id={self.scored_item_id}, persona_id={self.persona_id})>"
+        return (
+            f"<Article(id={self.id}, scored_item_id={self.scored_item_id}, "
+            f"persona_id={self.persona_id})>"
+        )

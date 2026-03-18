@@ -26,4 +26,7 @@ class Publication(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     def __repr__(self) -> str:
-        return f"<Publication(id={self.id}, article_id={self.article_id}, channel={self.channel}, status={self.status})>"
+        return (
+            f"<Publication(id={self.id}, article_id={self.article_id}, "
+            f"channel={self.channel}, status={self.status})>"
+        )

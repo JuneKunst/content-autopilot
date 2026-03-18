@@ -1,9 +1,10 @@
 """SNS cross-posting foundation: Mastodon + Bluesky."""
 import httpx
-from content_autopilot.schemas import ArticleDraft, PublishResult
-from content_autopilot.config import settings
-from content_autopilot.common.logger import get_logger
+
 from content_autopilot.common.http_client import create_client
+from content_autopilot.common.logger import get_logger
+from content_autopilot.config import settings
+from content_autopilot.schemas import ArticleDraft, PublishResult
 
 log = get_logger("publishers.social")
 
@@ -36,7 +37,10 @@ class MastodonPublisher:
                 )
                 resp.raise_for_status()
                 data = resp.json()
-                return PublishResult(channel="mastodon", status="success", external_url=data.get("url", ""))
+                url = data.get("url", "")
+                return PublishResult(
+                    channel="mastodon", status="success", external_url=url
+                )
             except httpx.HTTPStatusError as e:
                 return PublishResult(channel="mastodon", status="failed", error=str(e))
             except Exception as e:
@@ -96,7 +100,10 @@ class BlueskyPublisher:
                 )
                 resp.raise_for_status()
                 data = resp.json()
-                return PublishResult(channel="bluesky", status="success", external_url=data.get("uri", ""))
+                uri = data.get("uri", "")
+                return PublishResult(
+                    channel="bluesky", status="success", external_url=uri
+                )
             except httpx.HTTPStatusError as e:
                 return PublishResult(channel="bluesky", status="failed", error=str(e))
             except Exception as e:

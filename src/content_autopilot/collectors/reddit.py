@@ -1,10 +1,12 @@
 """Reddit collector using OAuth2 API."""
 import httpx
-from content_autopilot.schemas import RawItem
+
+from content_autopilot.common.http_client import create_client
 from content_autopilot.common.logger import get_logger
 from content_autopilot.common.rate_limiter import RateLimiter
-from content_autopilot.common.http_client import create_client
+from content_autopilot.common.retry import with_retry
 from content_autopilot.config import settings
+from content_autopilot.schemas import RawItem
 
 log = get_logger("collectors.reddit")
 REDDIT_TOKEN_URL = "https://www.reddit.com/api/v1/access_token"
@@ -13,12 +15,21 @@ REDDIT_API_URL = "https://oauth.reddit.com"
 
 class RedditCollector:
     def __init__(self, subreddits: list[str] | None = None):
-        self.subreddits = subreddits or ["technology", "programming", "MachineLearning", "artificial", "startups", "worldnews"]
+        default_subreddits = [
+            "technology",
+            "programming",
+            "MachineLearning",
+            "artificial",
+            "startups",
+            "worldnews",
+        ]
+        self.subreddits = subreddits or default_subreddits
         self._rate_limiter = RateLimiter(requests_per_minute=90)  # Reddit: 100 QPM limit
         self._token: str | None = None
         self._client_id = settings.reddit_client_id
         self._client_secret = settings.reddit_client_secret
 
+    @with_retry(max_attempts=3)
     async def _get_token(self, client: httpx.AsyncClient) -> str | None:
         """Get OAuth2 bearer token. Returns None if credentials not set."""
         if not self._client_id or not self._client_secret:
@@ -56,6 +67,7 @@ class RedditCollector:
                     log.warning("reddit_subreddit_error", subreddit=subreddit, error=str(e))
             return items[:limit]
 
+    @with_retry(max_attempts=3)
     async def _fetch_subreddit(self, client, headers, subreddit: str, limit: int) -> list[RawItem]:
         resp = await client.get(
             f"{REDDIT_API_URL}/r/{subreddit}/hot.json",
@@ -77,13 +89,17 @@ class RedditCollector:
         url = post.get("url", "")
         if url.startswith("/r/"):  # self post
             url = f"https://reddit.com{url}"
+        upvotes = post.get("score", 0)
+        comments = post.get("num_comments", 0)
+        author = post.get("author", "")
+        post_id = post.get("id", "")
         return RawItem(
             source="reddit",
             title=post.get("title", ""),
             url=url,
             content_preview=post.get("selftext", "")[:500],
-            engagement={"upvotes": post.get("score", 0), "comments": post.get("num_comments", 0)},
-            metadata={"subreddit": subreddit, "author": post.get("author", ""), "id": post.get("id", "")},
-            external_id=f"reddit_{post.get('id', '')}",
+            engagement={"upvotes": upvotes, "comments": comments},
+            metadata={"subreddit": subreddit, "author": author, "id": post_id},
+            external_id=f"reddit_{post_id}",
             source_lang="en",
         )

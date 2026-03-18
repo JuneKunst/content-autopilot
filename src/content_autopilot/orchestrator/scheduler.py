@@ -137,7 +137,10 @@ class ContentScheduler:
         return due
 
     def add_retry(self, item: ScheduledItem) -> bool:
-        """Schedule a failed item for retry. Returns True if retry scheduled, False if max retries exceeded."""
+        """Schedule a failed item for retry.
+
+        Returns True if retry scheduled, False if max retries exceeded.
+        """
         if item.retry_count >= item.max_retries:
             self._failed.append(item)
             return False

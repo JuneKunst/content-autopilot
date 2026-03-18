@@ -1,7 +1,8 @@
 """Shared HTTP client configuration using httpx."""
 
+from typing import Dict, Optional
+
 import httpx
-from typing import Optional, Dict, Any
 
 USER_AGENT = "ContentAutopilot/0.1.0 (https://github.com/user/content-autopilot)"
 
@@ -11,11 +12,11 @@ def create_client(
     headers: Optional[Dict[str, str]] = None,
 ) -> httpx.AsyncClient:
     """Create a configured async httpx client.
-    
+
     Args:
         timeout: Request timeout in seconds
         headers: Additional headers to include (merged with defaults)
-        
+
     Returns:
         Configured httpx.AsyncClient instance
     """
@@ -23,10 +24,10 @@ def create_client(
         "User-Agent": USER_AGENT,
         "Accept": "application/json",
     }
-    
+
     if headers:
         default_headers.update(headers)
-    
+
     return httpx.AsyncClient(
         timeout=timeout,
         headers=default_headers,

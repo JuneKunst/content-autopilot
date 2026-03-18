@@ -1,16 +1,15 @@
 """Structured logging using structlog with JSON output."""
 
+
 import structlog
-import logging
-from typing import Any
 
 
 def get_logger(name: str = "content-autopilot") -> structlog.BoundLogger:
     """Get a configured structlog logger instance.
-    
+
     Args:
         name: Logger name (typically module name)
-        
+
     Returns:
         Configured structlog BoundLogger instance
     """

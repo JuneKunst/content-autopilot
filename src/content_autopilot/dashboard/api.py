@@ -1,7 +1,6 @@
 """Dashboard API endpoints with HTTP Basic Auth."""
 from __future__ import annotations
 
-import asyncio
 import secrets
 from datetime import datetime, timezone
 from typing import Any
@@ -305,7 +304,11 @@ async def get_schedule(user: str = Depends(get_current_user)) -> dict[str, Any]:
     items = _scheduler.get_queue()
     return {
         "items": [
-            {"scheduled_at": item.scheduled_at.isoformat(), "title": item.article.title_ko, "score": item.score}
+            {
+                "scheduled_at": item.scheduled_at.isoformat(),
+                "title": item.article.title_ko,
+                "score": item.score,
+            }
             for item in items
         ],
         "queue_size": _scheduler.queue_size(),
@@ -340,15 +343,21 @@ async def dashboard_home(request: Request, user: str = Depends(get_current_user)
 
 
 @router.get("/dashboard/articles", include_in_schema=False)
-async def dashboard_articles(request: Request, page: int = 1, user: str = Depends(get_current_user)):
+async def dashboard_articles(
+    request: Request, page: int = 1, user: str = Depends(get_current_user)
+):
     """Articles list page."""
     return templates.TemplateResponse("articles.html", {"request": request, "page": page})
 
 
 @router.get("/dashboard/articles/{article_id}", include_in_schema=False)
-async def dashboard_article_detail(request: Request, article_id: int, user: str = Depends(get_current_user)):
+async def dashboard_article_detail(
+    request: Request, article_id: int, user: str = Depends(get_current_user)
+):
     """Article detail page."""
-    return templates.TemplateResponse("article_detail.html", {"request": request, "article_id": article_id})
+    return templates.TemplateResponse(
+        "article_detail.html", {"request": request, "article_id": article_id}
+    )
 
 
 @router.get("/dashboard/pipeline", include_in_schema=False)
@@ -370,12 +379,18 @@ async def dashboard_analytics(request: Request, user: str = Depends(get_current_
 
 
 @router.get("/dashboard/monetization", include_in_schema=False)
-async def dashboard_monetization(request: Request, user: str = Depends(get_current_user)):
+async def dashboard_monetization(
+    request: Request, user: str = Depends(get_current_user)
+):
     """Monetization settings page."""
     try:
         import yaml
+
         with open("config/monetization.yaml") as f:
             config = yaml.safe_load(f) or {}
-    except Exception:
+    except Exception as e:
+        log.debug("monetization_config_load_failed", error=str(e))
         config = {}
-    return templates.TemplateResponse("analytics.html", {"request": request, "monetization": config})
+    return templates.TemplateResponse(
+        "analytics.html", {"request": request, "monetization": config}
+    )

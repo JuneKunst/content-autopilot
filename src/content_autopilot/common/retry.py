@@ -1,15 +1,15 @@
 """Retry decorators using tenacity for resilient API calls."""
 
+from typing import Any, Callable, TypeVar
+
+import httpx
 from tenacity import (
     retry,
-    stop_after_attempt,
-    wait_exponential,
     retry_if_exception_type,
     retry_if_result,
+    stop_after_attempt,
+    wait_exponential,
 )
-import httpx
-from functools import wraps
-from typing import Callable, Any, TypeVar
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -20,12 +20,12 @@ def with_retry(
     max_wait: float = 60.0,
 ) -> Callable[[F], F]:
     """Decorator for exponential backoff retry on HTTP errors.
-    
+
     Args:
         max_attempts: Maximum number of retry attempts
         min_wait: Minimum wait time between retries (seconds)
         max_wait: Maximum wait time between retries (seconds)
-        
+
     Returns:
         Decorated function that retries on HTTP errors
     """
@@ -39,10 +39,10 @@ def with_retry(
 
 def with_api_retry(max_attempts: int = 3) -> Callable[[F], F]:
     """Retry decorator that handles HTTP errors and 429 rate limit responses.
-    
+
     Args:
         max_attempts: Maximum number of retry attempts
-        
+
     Returns:
         Decorated function that retries on HTTP errors and rate limits
     """
@@ -51,7 +51,7 @@ def with_api_retry(max_attempts: int = 3) -> Callable[[F], F]:
         if isinstance(result, httpx.Response):
             return result.status_code == 429
         return False
-    
+
     return retry(
         stop=stop_after_attempt(max_attempts),
         wait=wait_exponential(multiplier=1, min=1.0, max=60.0),

@@ -108,6 +108,15 @@ class Pipeline:
         for draft in drafts:
             try:
                 ghost_result = await self._ghost.publish(draft)
+                if ghost_result.status != "success":
+                    log.info("ghost_publish_retry", title=draft.title_ko[:30])
+                    ghost_result = await self._ghost.publish(draft)
+                    if ghost_result.status != "success":
+                        error_msg = (
+                            f"Ghost publish failed after retry: {ghost_result.error}"
+                        )
+                        result.errors.append(error_msg)
+
                 ghost_url = (
                     ghost_result.external_url if ghost_result.status == "success" else None
                 )
@@ -117,8 +126,6 @@ class Pipeline:
 
                 if ghost_result.status == "success":
                     result.published += 1
-                else:
-                    result.errors.append(f"Ghost publish failed: {ghost_result.error}")
             except Exception as exc:
                 log.error("pipeline_publish_error", error=str(exc))
                 result.errors.append(f"Publish error: {str(exc)[:100]}")
