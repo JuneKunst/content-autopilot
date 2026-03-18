@@ -1,0 +1,36 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.0, pytest-9.0.2, pluggy-1.6.0 -- /Users/june/.pyenv/versions/3.13.0/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/june/content-autopilot
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 25 items
+
+tests/publishers/test_social.py::test_mastodon_format_status_within_limit PASSED [  4%]
+tests/publishers/test_social.py::test_mastodon_format_status_includes_title PASSED [  8%]
+tests/publishers/test_social.py::test_mastodon_format_status_includes_source_url PASSED [ 12%]
+tests/publishers/test_social.py::test_mastodon_format_status_uses_ghost_url_when_provided PASSED [ 16%]
+tests/publishers/test_social.py::test_mastodon_format_status_includes_hashtags PASSED [ 20%]
+tests/publishers/test_social.py::test_mastodon_format_status_limits_hashtags_to_3 PASSED [ 24%]
+tests/publishers/test_social.py::test_mastodon_format_status_long_text_truncated PASSED [ 28%]
+tests/publishers/test_social.py::test_mastodon_publish_text_success PASSED [ 32%]
+tests/publishers/test_social.py::test_mastodon_publish_text_skipped_no_token PASSED [ 36%]
+tests/publishers/test_social.py::test_mastodon_publish_text_skipped_none_token PASSED [ 40%]
+tests/publishers/test_social.py::test_mastodon_publish_text_failed_on_http_error PASSED [ 44%]
+tests/publishers/test_social.py::test_mastodon_publish_text_failed_on_exception PASSED [ 48%]
+tests/publishers/test_social.py::test_mastodon_publish_sends_correct_payload PASSED [ 52%]
+tests/publishers/test_social.py::test_mastodon_publish_draft PASSED      [ 56%]
+tests/publishers/test_social.py::test_bluesky_format_post_within_limit PASSED [ 60%]
+tests/publishers/test_social.py::test_bluesky_format_post_includes_title PASSED [ 64%]
+tests/publishers/test_social.py::test_bluesky_format_post_includes_url PASSED [ 68%]
+tests/publishers/test_social.py::test_bluesky_format_post_uses_ghost_url PASSED [ 72%]
+tests/publishers/test_social.py::test_bluesky_format_post_long_text_truncated PASSED [ 76%]
+tests/publishers/test_social.py::test_bluesky_publish_skipped_no_credentials PASSED [ 80%]
+tests/publishers/test_social.py::test_bluesky_publish_skipped_none_credentials PASSED [ 84%]
+tests/publishers/test_social.py::test_bluesky_publish_success PASSED     [ 88%]
+tests/publishers/test_social.py::test_bluesky_publish_auth_failed PASSED [ 92%]
+tests/publishers/test_social.py::test_bluesky_publish_failed_on_http_error PASSED [ 96%]
+tests/publishers/test_social.py::test_bluesky_publish_sends_correct_record PASSED [100%]
+
+============================== 25 passed in 0.22s ==============================

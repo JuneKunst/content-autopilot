@@ -1,0 +1,12 @@
+channels:
+  mastodon:
+    enabled: false
+    instance: "https://mastodon.social"
+  bluesky:
+    enabled: false
+  linkedin:
+    enabled: false
+hashtag_limit: 3
+max_length:
+  mastodon: 500
+  bluesky: 300
